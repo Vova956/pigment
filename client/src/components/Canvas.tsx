@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 
 export default function Canvas() {
   const [connected, setConnected] = useState(false);
-  const [ws, setWs] = useState<WebSocket | null>(null);
 
   useEffect(() => {
     const socket = new WebSocket('ws://localhost:8080');
-    
+
     socket.onopen = () => {
       console.log('Connected to WebSocket');
       setConnected(true);
@@ -20,8 +19,6 @@ export default function Canvas() {
     socket.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-
-    setWs(socket);
 
     return () => {
       socket.close();
