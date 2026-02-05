@@ -1,0 +1,17 @@
+{
+  "name": "collaborative-painting",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "lint": "npm run lint --prefix client && npm run lint --prefix server",
+    "lint:fix": "npm run lint:fix --prefix client && npm run lint:fix --prefix server",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json}\" --ignore-path .prettierignore"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.2"
+  }
+}

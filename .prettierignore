@@ -1,0 +1,7 @@
+node_modules
+dist
+.astro
+build
+coverage
+*.min.js
+package-lock.json

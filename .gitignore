@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.DS_Store
+
+client/node_modules/
+client/dist/
+client/.astro/
+
+server/node_modules/
+server/dist/
+
+*.log
+.env
+.env.local
+package-lock.json
