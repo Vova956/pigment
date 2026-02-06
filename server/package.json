@@ -6,12 +6,13 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node -r dotenv/config dist/index.js",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\""
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
     "ws": "^8.17.1"
   },
   "devDependencies": {

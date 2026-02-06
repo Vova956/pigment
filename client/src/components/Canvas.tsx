@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { config } from '../config';
 
 export default function Canvas() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const socket = new WebSocket('ws://localhost:8080');
+    const socket = new WebSocket(config.websocketUrl);
 
     socket.onopen = () => {
       console.log('Connected to WebSocket');
