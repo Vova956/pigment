@@ -1,10 +1,18 @@
-import { WebSocketServer, WebSocket } from 'ws';
-import { config } from './config';
+import express from "express";
+import cors from "cors";
+import { WebSocketServer, WebSocket } from "ws";
 
-const wss = new WebSocketServer({ port: config.port, host: config.host });
+import { config } from "./config";
+import authRoutes from "./routes/auth.routes";
+import { initDB } from "./db/database";
+import { createTables } from "./db/schema";
 
-const wss = new WebSocketServer({ port: PORT });
 const connectedClients = new Set<WebSocket>();
+
+const wss = new WebSocketServer({
+  port: config.wsPort,
+  host: config.host,
+});
 
 function broadcast(sender: WebSocket, message: Buffer) {
   connectedClients.forEach((client) => {
@@ -35,36 +43,40 @@ function setupWebSocketServer() {
   });
 }
 
-// ---------- Express API ----------
 function setupApiServer() {
   const app = express();
-  app.use(cors({ origin: "http://localhost:5173" })); // adjust if needed
+
+  app.use(cors({ origin: config.clientUrl }));
   app.use(express.json());
 
   app.use("/auth", authRoutes);
 
-  app.get("/health", (_req, res) => res.json({ ok: true }));
+  app.get("/health", (_req, res) => {
+    res.json({ ok: true });
+  });
 
-  app.listen(API_PORT, () => {
-    console.log(`API server running on http://localhost:${API_PORT}`);
+  app.listen(config.apiPort, config.host, () => {
+    console.log(
+      `API server running on http://${config.host}:${config.apiPort}`
+    );
   });
 }
 
-
 async function start() {
   try {
-    // Initialize DB + ensure tables exist
     await initDB();
     await createTables();
 
-    // Start WS server handlers
     setupWebSocketServer();
     setupApiServer();
-    console.log(`WebSocket server running on ws://localhost:${PORT}`);
+
+    console.log(
+      `WebSocket server running on ws://${config.host}:${config.wsPort}`
+    );
   } catch (err) {
     console.error("Failed to start server:", err);
     process.exit(1);
   }
 }
 
-console.log(`WebSocket server running on ws://${config.host}:${config.port}`);
+void start();
