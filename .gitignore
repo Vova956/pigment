@@ -12,4 +12,6 @@ server/dist/
 *.log
 .env
 .env.local
+!.env.development
+!.env.production
 package-lock.json

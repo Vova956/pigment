@@ -1,14 +1,7 @@
-// src/index.ts
-import { WebSocketServer, WebSocket } from "ws";
-import { initDB } from "./db/database";
-import { createTables } from "./db/schema";
-import cors from "cors";
-import express from "express";
-import authRoutes from "./routes/auth.routes";
+import { WebSocketServer, WebSocket } from 'ws';
+import { config } from './config';
 
-
-const PORT = 8080;
-const API_PORT = 3000;
+const wss = new WebSocketServer({ port: config.port, host: config.host });
 
 const wss = new WebSocketServer({ port: PORT });
 const connectedClients = new Set<WebSocket>();
@@ -74,4 +67,4 @@ async function start() {
   }
 }
 
-void start();
+console.log(`WebSocket server running on ws://${config.host}:${config.port}`);
