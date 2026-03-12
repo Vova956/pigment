@@ -1,14 +1,25 @@
 ---
 import Canvas from '../components/Canvas';
+import '../styles/canvas.css';
+
+const userId = crypto.randomUUID();
+const userName = 'User ' + Math.floor(Math.random() * 1000);
+const sessionId = Astro.url.searchParams.get('session') || 'default';
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Collaborative Painting</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Pigment - Collaborative Whiteboard</title>
+    <meta name="description" content="Real-time collaborative drawing and whiteboard platform" />
   </head>
   <body>
-    <Canvas client:load />
+    <Canvas
+      client:load
+      userId={userId}
+      userName={userName}
+      sessionId={sessionId}
+    />
   </body>
 </html>
