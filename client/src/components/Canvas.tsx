@@ -287,10 +287,10 @@ export default function Canvas({
           </span>
         </div>
         <div className="canvas-header__actions">
-          <button onClick={undo} disabled={!connected} className="canvas-header__btn">
+          <button onClick={undo} className="canvas-header__btn">
             Undo
           </button>
-          <button onClick={clearCanvas} disabled={!connected} className="canvas-header__btn canvas-header__btn--danger">
+          <button onClick={clearCanvas} className="canvas-header__btn canvas-header__btn--danger">
             Clear
           </button>
           <button onClick={exportCanvas} className="canvas-header__btn canvas-header__btn--primary">
@@ -301,7 +301,7 @@ export default function Canvas({
 
       <div className="canvas-main">
         <div className="canvas-toolbar-wrapper">
-          <Toolbar tool={tool} onToolChange={setTool} disabled={!connected} />
+          <Toolbar tool={tool} onToolChange={setTool} />
         </div>
 
         <div className="canvas-svg-wrapper">
