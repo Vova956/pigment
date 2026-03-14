@@ -1,7 +1,9 @@
+// src/routes/auth.routes.ts
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { createUser, findUserByEmail } from "../db/user.model";
+import { config } from "../config";
 
 const router = Router();
 
@@ -17,13 +19,12 @@ router.post("/register", async (req, res) => {
 
   try {
     await createUser(username, email, password);
-    return res.status(201).json({ message: "User created" });
+    res.status(201).json({ message: "User created" });
   } catch (err: any) {
-    return res.status(400).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
 
-//LOGIN
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
