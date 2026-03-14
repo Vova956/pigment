@@ -3,3 +3,8 @@ export const config = {
   host: process.env.HOST || '0.0.0.0',
   jwtSecret: process.env.JWT_SECRET || 'change-me-in-production',
 };
+  host: "localhost",
+  apiPort: 3000,
+  wsPort: 8080,
+  clientUrl: "http://localhost:5173",
+};

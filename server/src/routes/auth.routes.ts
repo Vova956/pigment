@@ -7,6 +7,9 @@ import { config } from "../config";
 
 const router = Router();
 
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+
+// REGISTER (if you already have it, keep it)
 router.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -26,24 +29,34 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ error: "Missing fields" });
+    return res.status(400).json({ error: "Missing email or password" });
   }
 
   try {
     const user = await findUserByEmail(email);
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Create a token that identifies the user
     const token = jwt.sign(
-      { id: user.id, username: user.username },
-      config.jwtSecret,
+      { userId: user.id, username: user.username, email: user.email },
+      JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    res.json({ token });
+    // Return minimal user info + token
+    return res.json({
+      token,
+      user: { id: user.id, username: user.username, email: user.email },
+    });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Login failed" });
   }
 });
 

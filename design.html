@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atelier — Collaborative Canvas</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1a1a2e;
+            --paper: #faf9f7;
+            --warm-white: #f5f3ef;
+            --accent: #e85d04;
+            --accent-soft: #fff0e6;
+            --teal: #0d9488;
+            --teal-soft: #ccfbf1;
+            --violet: #7c3aed;
+            --violet-soft: #ede9fe;
+            --rose: #e11d48;
+            --rose-soft: #ffe4e6;
+            --sky: #0284c7;
+            --amber: #d97706;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --radius: 10px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+            --shadow-xl: 0 20px 60px rgba(0,0,0,0.18);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--ink);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            color: var(--ink);
+        }
+
+        /* ===== LEFT SIDEBAR ===== */
+        .sidebar {
+            width: 260px;
+            background: #16162a;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            padding: 20px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            font-weight: 700;
+        }
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 900;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-section {
+            padding: 18px 16px 8px;
+        }
+
+        .sidebar-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate-400);
+            margin-bottom: 10px;
+            padding: 0 6px;
+        }
+
+        .canvas-list {
+            list-style: none;
+        }
+
+        .canvas-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: rgba(255,255,255,0.6);
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+        .canvas-item:hover { background: rgba(255,255,255,0.06); color: white; }
+        .canvas-item.active { background: rgba(232,93,4,0.15); color: var(--accent); }
+
+        .canvas-item .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .canvas-item .count {
+            margin-left: auto;
+            background: rgba(255,255,255,0.08);
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
+        .canvas-item.active .count { background: rgba(232,93,4,0.25); }
+
+        /* Users section */
+        .user-list {
+            list-style: none;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .user-avatar .status-dot {
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 2px solid #16162a;
+        }
+
+        .status-online { background: #22c55e; }
+        .status-idle { background: #eab308; }
+        .status-offline { background: var(--slate-500); }
+
+        .user-name { flex: 1; }
+        .user-role {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.06);
+            color: var(--slate-400);
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .new-canvas-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .new-canvas-btn:hover { background: #d45203; transform: translateY(-1px); }
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Top bar */
+        .topbar {
+            height: 54px;
+            background: var(--paper);
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .canvas-title-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .canvas-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .canvas-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: var(--teal-soft);
+            color: var(--teal);
+        }
+
+        .topbar-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--slate-200);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--slate-500);
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .icon-btn:hover { border-color: var(--slate-300); color: var(--ink); background: var(--slate-100); }
+
+        .icon-btn .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 16px;
+            height: 16px;
+            background: var(--rose);
+            color: white;
+            border-radius: 50%;
+            font-size: 9px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .share-btn {
+            padding: 7px 14px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .share-btn:hover { background: #d45203; }
+
+        .avatar-stack {
+            display: flex;
+            margin-left: 6px;
+        }
+
+        .avatar-stack .user-avatar {
+            margin-left: -8px;
+            border: 2px solid var(--paper);
+            width: 30px;
+            height: 30px;
+        }
+
+        .avatar-stack .user-avatar:first-child { margin-left: 0; }
+
+        /* ===== TOOLBAR ===== */
+        .toolbar {
+            background: var(--paper);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 3px;
+            background: var(--warm-white);
+            padding: 3px;
+            border-radius: 9px;
+            border: 1px solid var(--slate-200);
+        }
+
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            color: var(--slate-500);
+            position: relative;
+        }
+
+        .tool-btn:hover { background: white; color: var(--ink); box-shadow: var(--shadow-sm); }
+
+        .tool-btn.active {
+            background: var(--ink);
+            color: white;
+            box-shadow: 0 2px 8px rgba(26,26,46,0.25);
+        }
+
+        .tool-btn .tooltip {
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--ink);
+            color: white;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 5px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s;
+        }
+
+        .tool-btn:hover .tooltip { opacity: 1; }
+
+        .separator {
+            width: 1px;
+            height: 28px;
+            background: var(--slate-200);
+            flex-shrink: 0;
+        }
+
+        /* Color palette */
+        .color-palette {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .color-swatch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .color-swatch:hover { transform: scale(1.15); }
+        .color-swatch.active { border-color: var(--ink); box-shadow: 0 0 0 2px white, 0 0 0 4px var(--ink); transform: scale(1.1); }
+
+        .color-custom {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px dashed var(--slate-300);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .color-custom input {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .color-custom-preview {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        /* Brush size */
+        .size-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .size-control label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .size-slider {
+            -webkit-appearance: none;
+            width: 90px;
+            height: 4px;
+            background: var(--slate-200);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .size-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--ink);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .size-preview {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .size-dot {
+            border-radius: 50%;
+            background: var(--ink);
+            transition: all 0.15s;
+        }
+
+        .size-value {
+            font-size: 11px;
+            color: var(--slate-400);
+            font-weight: 600;
+            min-width: 28px;
+        }
+
+        /* Opacity */
+        .opacity-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .opacity-control label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Action buttons */
+        .toolbar-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 6px;
+        }
+
+        .action-btn {
+            padding: 7px 12px;
+            border: 1px solid var(--slate-200);
+            background: white;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--slate-600);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .action-btn:hover { background: var(--slate-100); border-color: var(--slate-300); }
+        .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .action-btn.save {
+            background: var(--ink);
+            color: white;
+            border-color: var(--ink);
+        }
+
+        .action-btn.save:hover { background: #2a2a4e; }
+
+        /* ===== CANVAS AREA ===== */
+        .canvas-workspace {
+            flex: 1;
+            background: var(--slate-100);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .canvas-bg-pattern {
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle, var(--slate-300) 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
+            opacity: 0.5;
+        }
+
+        canvas {
+            position: relative;
+            z-index: 1;
+            background: white;
+            border-radius: 4px;
+            box-shadow: var(--shadow-xl);
+            cursor: crosshair;
+        }
+
+        /* Cursor labels for collaborators */
+        .remote-cursor {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+            transition: left 0.3s ease, top 0.3s ease;
+        }
+
+        .cursor-pointer {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 12px solid var(--teal);
+            transform: rotate(-30deg);
+        }
+
+        .cursor-label {
+            position: absolute;
+            top: 14px;
+            left: 8px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+            white-space: nowrap;
+        }
+
+        /* ===== RIGHT PANEL ===== */
+        .right-panel {
+            width: 280px;
+            background: var(--paper);
+            border-left: 1px solid var(--slate-200);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--slate-200);
+            flex-shrink: 0;
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--slate-400);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .panel-tab:hover { color: var(--ink); }
+        .panel-tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+        .panel-content {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            margin-bottom: 20px;
+        }
+
+        .panel-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--slate-400);
+            margin-bottom: 10px;
+        }
+
+        /* Layer items */
+        .layer-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+            margin-bottom: 3px;
+        }
+
+        .layer-item:hover { background: var(--warm-white); }
+        .layer-item.active { background: var(--accent-soft); border-color: rgba(232,93,4,0.2); }
+
+        .layer-thumb {
+            width: 36px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid var(--slate-200);
+            background: white;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .layer-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .layer-info { flex: 1; min-width: 0; }
+
+        .layer-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .layer-meta {
+            font-size: 10px;
+            color: var(--slate-400);
+        }
+
+        .layer-visibility {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: var(--slate-400);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .layer-visibility:hover { background: var(--slate-100); color: var(--ink); }
+
+        /* Activity feed */
+        .activity-item {
+            display: flex;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--slate-100);
+        }
+
+        .activity-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .activity-text {
+            font-size: 12px;
+            color: var(--slate-600);
+            line-height: 1.4;
+        }
+
+        .activity-text strong { color: var(--ink); }
+
+        .activity-time {
+            font-size: 10px;
+            color: var(--slate-400);
+            margin-top: 2px;
+        }
+
+        /* Chat section */
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 8px;
+        }
+
+        .chat-msg {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .chat-msg-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .chat-msg-content {
+            flex: 1;
+        }
+
+        .chat-msg-header {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+
+        .chat-msg-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .chat-msg-time {
+            font-size: 10px;
+            color: var(--slate-400);
+        }
+
+        .chat-msg-body {
+            font-size: 12.5px;
+            color: var(--slate-600);
+            line-height: 1.45;
+        }
+
+        .chat-input-area {
+            padding-top: 10px;
+            border-top: 1px solid var(--slate-200);
+            display: flex;
+            gap: 6px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .chat-input:focus { border-color: var(--accent); }
+
+        .chat-send {
+            width: 34px;
+            height: 34px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.15s;
+        }
+
+        .chat-send:hover { background: #d45203; }
+
+        /* Share modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(26,26,46,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 480px;
+            max-width: 90vw;
+            box-shadow: var(--shadow-xl);
+            transform: translateY(10px);
+            transition: transform 0.2s;
+            overflow: hidden;
+        }
+
+        .modal-overlay.open .modal { transform: translateY(0); }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: var(--slate-100);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--slate-500);
+            font-size: 16px;
+            transition: all 0.15s;
+        }
+
+        .modal-close:hover { background: var(--slate-200); }
+
+        .modal-body { padding: 24px; }
+
+        .share-link-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .share-link-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            color: var(--slate-500);
+            background: var(--slate-100);
+            outline: none;
+        }
+
+        .copy-btn {
+            padding: 10px 16px;
+            background: var(--ink);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .copy-btn:hover { background: #2a2a4e; }
+        .copy-btn.copied { background: var(--teal); }
+
+        .share-permissions-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--slate-400);
+            margin-bottom: 10px;
+        }
+
+        .share-user-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--slate-100);
+        }
+
+        .share-user-row:last-child { border-bottom: none; }
+
+        .share-user-info {
+            flex: 1;
+        }
+
+        .share-user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .share-user-email {
+            font-size: 11px;
+            color: var(--slate-400);
+        }
+
+        .permission-select {
+            padding: 5px 10px;
+            border: 1px solid var(--slate-200);
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: inherit;
+            color: var(--slate-600);
+            cursor: pointer;
+            background: white;
+        }
+
+        .invite-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--slate-200);
+        }
+
+        .invite-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .invite-input:focus { border-color: var(--accent); }
+
+        .invite-btn {
+            padding: 10px 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .invite-btn:hover { background: #d45203; }
+
+        /* Stats bar */
+        .stats-bar {
+            height: 28px;
+            background: var(--warm-white);
+            border-top: 1px solid var(--slate-200);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 16px;
+            font-size: 11px;
+            color: var(--slate-400);
+            flex-shrink: 0;
+        }
+
+        .stats-bar .stat { display: flex; align-items: center; gap: 4px; }
+
+        .zoom-controls {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .zoom-btn {
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--slate-300);
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--slate-500);
+        }
+
+        .zoom-btn:hover { background: var(--slate-100); }
+
+        /* Notifications toast */
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--ink);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-lg);
+            animation: toastIn 0.3s ease;
+            max-width: 320px;
+        }
+
+        .toast.leaving {
+            animation: toastOut 0.3s ease forwards;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(30px); }
+        }
+
+        /* Version history panel */
+        .version-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 4px;
+        }
+
+        .version-item:hover { background: var(--warm-white); }
+
+        .version-dot-line {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 12px;
+            flex-shrink: 0;
+        }
+
+        .version-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .version-line {
+            width: 2px;
+            flex: 1;
+            background: var(--slate-200);
+            margin-top: 4px;
+        }
+
+        .version-info { flex: 1; }
+
+        .version-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .version-detail {
+            font-size: 11px;
+            color: var(--slate-400);
+            margin-top: 2px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--slate-300); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--slate-400); }
+
+        /* Eraser cursor */
+        .eraser-cursor {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='4' y='4' width='16' height='16' rx='2' fill='white' stroke='%2394a3b8' stroke-width='2'/%3E%3C/svg%3E") 12 12, auto;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Left Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">A</div>
+        <div class="brand-name">Atelier</div>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-label">Canvases</div>
+        <ul class="canvas-list">
+            <li class="canvas-item active">
+                <span class="dot" style="background: var(--accent);"></span>
+                Landscape Study
+                <span class="count">3</span>
+            </li>
+            <li class="canvas-item">
+                <span class="dot" style="background: var(--teal);"></span>
+                Logo Concepts
+                <span class="count">2</span>
+            </li>
+            <li class="canvas-item">
+                <span class="dot" style="background: var(--violet);"></span>
+                UI Wireframes
+                <span class="count">1</span>
+            </li>
+            <li class="canvas-item">
+                <span class="dot" style="background: var(--sky);"></span>
+                Color Palette Exploration
+                <span class="count">0</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-label">Collaborators</div>
+        <ul class="user-list">
+            <li class="user-item">
+                <div class="user-avatar" style="background: var(--accent);">
+                    Y
+                    <span class="status-dot status-online"></span>
+                </div>
+                <span class="user-name">You</span>
+                <span class="user-role">Owner</span>
+            </li>
+            <li class="user-item">
+                <div class="user-avatar" style="background: var(--teal);">
+                    M
+                    <span class="status-dot status-online"></span>
+                </div>
+                <span class="user-name">Maya Chen</span>
+                <span class="user-role">Editor</span>
+            </li>
+            <li class="user-item">
+                <div class="user-avatar" style="background: var(--violet);">
+                    J
+                    <span class="status-dot status-idle"></span>
+                </div>
+                <span class="user-name">Jake Torres</span>
+                <span class="user-role">Editor</span>
+            </li>
+            <li class="user-item">
+                <div class="user-avatar" style="background: var(--slate-400);">
+                    S
+                    <span class="status-dot status-offline"></span>
+                </div>
+                <span class="user-name">Sarah Kim</span>
+                <span class="user-role">Viewer</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-bottom">
+        <button class="new-canvas-btn" id="newCanvasBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Canvas
+        </button>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="canvas-title-area">
+            <span class="canvas-title">Landscape Study</span>
+            <span class="canvas-badge">● Live</span>
+        </div>
+        <div class="topbar-actions">
+            <button class="icon-btn" id="historyBtn" title="Version History">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+            <button class="icon-btn" id="notifBtn" title="Notifications">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span class="badge">3</span>
+            </button>
+            <div class="avatar-stack">
+                <div class="user-avatar" style="background: var(--accent); font-size: 10px; width: 28px; height: 28px;">Y</div>
+                <div class="user-avatar" style="background: var(--teal); font-size: 10px; width: 28px; height: 28px;">M</div>
+                <div class="user-avatar" style="background: var(--violet); font-size: 10px; width: 28px; height: 28px;">J</div>
+            </div>
+            <button class="share-btn" id="shareBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                Share
+            </button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="tool-group" id="drawingTools">
+            <button class="tool-btn active" data-tool="brush" title="Brush">
+                <span class="tooltip">Brush (B)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
+            </button>
+            <button class="tool-btn" data-tool="pencil" title="Pencil">
+                <span class="tooltip">Pencil (P)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+            <button class="tool-btn" data-tool="eraser" title="Eraser">
+                <span class="tooltip">Eraser (E)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l10-10 7 7-4 4"/><path d="M7 20l3-3"/></svg>
+            </button>
+        </div>
+
+        <div class="tool-group" id="shapeTools">
+            <button class="tool-btn" data-tool="line" title="Line">
+                <span class="tooltip">Line (L)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+            </button>
+            <button class="tool-btn" data-tool="rect" title="Rectangle">
+                <span class="tooltip">Rectangle (R)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            </button>
+            <button class="tool-btn" data-tool="circle" title="Circle">
+                <span class="tooltip">Circle (C)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+            </button>
+            <button class="tool-btn" data-tool="triangle" title="Triangle">
+                <span class="tooltip">Triangle (T)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L22 21H2z"/></svg>
+            </button>
+        </div>
+
+        <div class="tool-group">
+            <button class="tool-btn" data-tool="text" title="Text">
+                <span class="tooltip">Text (X)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+            </button>
+            <button class="tool-btn" data-tool="fill" title="Fill">
+                <span class="tooltip">Fill (F)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22l1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="M14 4l3-3 6 6-3 3"/><path d="M19 15c1 1 2 2 2 3.5a2.5 2.5 0 0 1-5 0c0-1.5 1-2.5 2-3.5z"/></svg>
+            </button>
+            <button class="tool-btn" data-tool="eyedropper" title="Eyedropper">
+                <span class="tooltip">Eyedropper (I)</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22l1-1h3l9-9"/><path d="M3 21v-3l9-9"/><circle cx="18" cy="6" r="3"/></svg>
+            </button>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="color-palette" id="colorPalette">
+            <div class="color-swatch active" style="background: #1a1a2e;" data-color="#1a1a2e"></div>
+            <div class="color-swatch" style="background: #e85d04;" data-color="#e85d04"></div>
+            <div class="color-swatch" style="background: #0d9488;" data-color="#0d9488"></div>
+            <div class="color-swatch" style="background: #7c3aed;" data-color="#7c3aed"></div>
+            <div class="color-swatch" style="background: #e11d48;" data-color="#e11d48"></div>
+            <div class="color-swatch" style="background: #0284c7;" data-color="#0284c7"></div>
+            <div class="color-swatch" style="background: #d97706;" data-color="#d97706"></div>
+            <div class="color-swatch" style="background: white; border: 1px solid #cbd5e1;" data-color="#ffffff"></div>
+            <div class="color-custom" id="colorCustom">
+                <input type="color" value="#1a1a2e" id="colorPicker">
+                <div class="color-custom-preview" style="background: #1a1a2e;"></div>
+            </div>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="size-control">
+            <label>Size</label>
+            <div class="size-preview"><div class="size-dot" id="sizeDot" style="width:5px;height:5px;"></div></div>
+            <input type="range" class="size-slider" id="sizeSlider" min="1" max="60" value="5">
+            <span class="size-value" id="sizeValue">5</span>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="opacity-control">
+            <label>Opacity</label>
+            <input type="range" class="size-slider" id="opacitySlider" min="5" max="100" value="100" style="width:70px;">
+            <span class="size-value" id="opacityValue">100%</span>
+        </div>
+
+        <div class="toolbar-actions">
+            <button class="action-btn" id="undoBtn" title="Undo (Ctrl+Z)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                Undo
+            </button>
+            <button class="action-btn" id="redoBtn" title="Redo (Ctrl+Shift+Z)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+                Redo
+            </button>
+            <button class="action-btn" id="clearBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Clear
+            </button>
+            <button class="action-btn save" id="saveBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas Workspace -->
+    <div class="canvas-workspace" id="canvasWorkspace">
+        <div class="canvas-bg-pattern"></div>
+        <canvas id="mainCanvas" width="960" height="540"></canvas>
+
+        <!-- Simulated remote cursors -->
+        <div class="remote-cursor" id="cursor-maya" style="left: 480px; top: 260px;">
+            <div class="cursor-pointer" style="border-bottom-color: var(--teal);"></div>
+            <div class="cursor-label" style="background: var(--teal);">Maya</div>
+        </div>
+        <div class="remote-cursor" id="cursor-jake" style="left: 680px; top: 340px;">
+            <div class="cursor-pointer" style="border-bottom-color: var(--violet);"></div>
+            <div class="cursor-label" style="background: var(--violet);">Jake</div>
+        </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="stats-bar">
+        <div class="stat">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/></svg>
+            <span id="toolDisplay">Brush</span>
+        </div>
+        <div class="stat">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18"/></svg>
+            960 × 540
+        </div>
+        <div class="stat" id="cursorPos">X: 0 Y: 0</div>
+        <div class="stat" id="strokeCount">Strokes: 0</div>
+        <div class="stat">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#22c55e;"></span>
+            Auto-saved 2s ago
+        </div>
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomOut">−</button>
+            <span id="zoomLevel">100%</span>
+            <button class="zoom-btn" id="zoomIn">+</button>
+        </div>
+    </div>
+</div>
+
+<!-- Right Panel -->
+<div class="right-panel" id="rightPanel">
+    <div class="panel-tabs">
+        <button class="panel-tab active" data-panel="layers">Layers</button>
+        <button class="panel-tab" data-panel="activity">Activity</button>
+        <button class="panel-tab" data-panel="chat">Chat</button>
+    </div>
+
+    <!-- Layers panel -->
+    <div class="panel-content" id="panelLayers">
+        <div class="panel-section">
+            <div class="panel-section-title">Layers</div>
+            <div class="layer-item active">
+                <div class="layer-thumb" style="background: linear-gradient(135deg, #e85d04 30%, #0d9488);"></div>
+                <div class="layer-info">
+                    <div class="layer-name">Background</div>
+                    <div class="layer-meta">You · Edited now</div>
+                </div>
+                <button class="layer-visibility">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+            <div class="layer-item">
+                <div class="layer-thumb" style="background: linear-gradient(to right, #7c3aed, transparent);"></div>
+                <div class="layer-info">
+                    <div class="layer-name">Maya's strokes</div>
+                    <div class="layer-meta">Maya · 3m ago</div>
+                </div>
+                <button class="layer-visibility">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+            <div class="layer-item">
+                <div class="layer-thumb" style="background: linear-gradient(135deg, #0284c7, transparent);"></div>
+                <div class="layer-info">
+                    <div class="layer-name">Shapes layer</div>
+                    <div class="layer-meta">Jake · 12m ago</div>
+                </div>
+                <button class="layer-visibility">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+            <button class="action-btn" style="width:100%;justify-content:center;margin-top:8px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Layer
+            </button>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-section-title">Version History</div>
+            <div class="version-item">
+                <div class="version-dot-line">
+                    <div class="version-dot"></div>
+                    <div class="version-line"></div>
+                </div>
+                <div class="version-info">
+                    <div class="version-title">Current state</div>
+                    <div class="version-detail">Just now · You + Maya</div>
+                </div>
+            </div>
+            <div class="version-item">
+                <div class="version-dot-line">
+                    <div class="version-dot" style="background: var(--slate-300);"></div>
+                    <div class="version-line"></div>
+                </div>
+                <div class="version-info">
+                    <div class="version-title">Added gradient fills</div>
+                    <div class="version-detail">15m ago · Maya</div>
+                </div>
+            </div>
+            <div class="version-item">
+                <div class="version-dot-line">
+                    <div class="version-dot" style="background: var(--slate-300);"></div>
+                    <div class="version-line"></div>
+                </div>
+                <div class="version-info">
+                    <div class="version-title">Initial sketch</div>
+                    <div class="version-detail">1h ago · You</div>
+                </div>
+            </div>
+            <div class="version-item">
+                <div class="version-dot-line">
+                    <div class="version-dot" style="background: var(--slate-300);"></div>
+                </div>
+                <div class="version-info">
+                    <div class="version-title">Canvas created</div>
+                    <div class="version-detail">2h ago · You</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity panel -->
+    <div class="panel-content" id="panelActivity" style="display:none;">
+        <div class="panel-section">
+            <div class="panel-section-title">Recent Activity</div>
+
+            <div class="activity-item">
+                <div class="activity-avatar" style="background:var(--teal);">M</div>
+                <div>
+                    <div class="activity-text"><strong>Maya</strong> added brush strokes to the canvas</div>
+                    <div class="activity-time">2 minutes ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-avatar" style="background:var(--violet);">J</div>
+                <div>
+                    <div class="activity-text"><strong>Jake</strong> drew a rectangle shape</div>
+                    <div class="activity-time">5 minutes ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-avatar" style="background:var(--accent);">Y</div>
+                <div>
+                    <div class="activity-text"><strong>You</strong> changed brush color to orange</div>
+                    <div class="activity-time">8 minutes ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-avatar" style="background:var(--teal);">M</div>
+                <div>
+                    <div class="activity-text"><strong>Maya</strong> joined the session</div>
+                    <div class="activity-time">15 minutes ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-avatar" style="background:var(--violet);">J</div>
+                <div>
+                    <div class="activity-text"><strong>Jake</strong> joined the session</div>
+                    <div class="activity-time">18 minutes ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-avatar" style="background:var(--accent);">Y</div>
+                <div>
+                    <div class="activity-text"><strong>You</strong> created this canvas</div>
+                    <div class="activity-time">2 hours ago</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat panel -->
+    <div class="panel-content" id="panelChat" style="display:none;">
+        <div class="chat-section">
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-msg">
+                    <div class="chat-msg-avatar" style="background:var(--teal);">M</div>
+                    <div class="chat-msg-content">
+                        <div class="chat-msg-header">
+                            <span class="chat-msg-name">Maya</span>
+                            <span class="chat-msg-time">2:30 PM</span>
+                        </div>
+                        <div class="chat-msg-body">Hey! I love the direction this is going. Should I keep adding to the gradient section?</div>
+                    </div>
+                </div>
+                <div class="chat-msg">
+                    <div class="chat-msg-avatar" style="background:var(--accent);">Y</div>
+                    <div class="chat-msg-content">
+                        <div class="chat-msg-header">
+                            <span class="chat-msg-name">You</span>
+                            <span class="chat-msg-time">2:31 PM</span>
+                        </div>
+                        <div class="chat-msg-body">Yes! Go for it. I'll work on the foreground elements in the meantime.</div>
+                    </div>
+                </div>
+                <div class="chat-msg">
+                    <div class="chat-msg-avatar" style="background:var(--violet);">J</div>
+                    <div class="chat-msg-content">
+                        <div class="chat-msg-header">
+                            <span class="chat-msg-name">Jake</span>
+                            <span class="chat-msg-time">2:34 PM</span>
+                        </div>
+                        <div class="chat-msg-body">Added some geometric shapes on the left side. Let me know if the sizing works!</div>
+                    </div>
+                </div>
+                <div class="chat-msg">
+                    <div class="chat-msg-avatar" style="background:var(--teal);">M</div>
+                    <div class="chat-msg-content">
+                        <div class="chat-msg-header">
+                            <span class="chat-msg-name">Maya</span>
+                            <span class="chat-msg-time">2:36 PM</span>
+                        </div>
+                        <div class="chat-msg-body">Looks great Jake! Maybe try a slightly warmer tone though? 🎨</div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type a message...">
+                <button class="chat-send" id="chatSend">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="shareModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">Share Canvas</span>
+            <button class="modal-close" id="modalClose">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="share-link-row">
+                <input type="text" class="share-link-input" value="https://atelier.app/canvas/landscape-study-a8f3" readonly>
+                <button class="copy-btn" id="copyLink">Copy Link</button>
+            </div>
+
+            <div class="share-permissions-title">People with access</div>
+
+            <div class="share-user-row">
+                <div class="user-avatar" style="background:var(--accent);width:32px;height:32px;font-size:12px;">Y</div>
+                <div class="share-user-info">
+                    <div class="share-user-name">You</div>
+                    <div class="share-user-email">you@email.com</div>
+                </div>
+                <span style="font-size:12px;color:var(--slate-400);font-weight:600;">Owner</span>
+            </div>
+            <div class="share-user-row">
+                <div class="user-avatar" style="background:var(--teal);width:32px;height:32px;font-size:12px;">M</div>
+                <div class="share-user-info">
+                    <div class="share-user-name">Maya Chen</div>
+                    <div class="share-user-email">maya@design.co</div>
+                </div>
+                <select class="permission-select">
+                    <option value="editor" selected>Can edit</option>
+                    <option value="viewer">Can view</option>
+                    <option value="remove">Remove</option>
+                </select>
+            </div>
+            <div class="share-user-row">
+                <div class="user-avatar" style="background:var(--violet);width:32px;height:32px;font-size:12px;">J</div>
+                <div class="share-user-info">
+                    <div class="share-user-name">Jake Torres</div>
+                    <div class="share-user-email">jake@studio.io</div>
+                </div>
+                <select class="permission-select">
+                    <option value="editor" selected>Can edit</option>
+                    <option value="viewer">Can view</option>
+                    <option value="remove">Remove</option>
+                </select>
+            </div>
+            <div class="share-user-row">
+                <div class="user-avatar" style="background:var(--slate-400);width:32px;height:32px;font-size:12px;">S</div>
+                <div class="share-user-info">
+                    <div class="share-user-name">Sarah Kim</div>
+                    <div class="share-user-email">sarah@agency.com</div>
+                </div>
+                <select class="permission-select">
+                    <option value="editor">Can edit</option>
+                    <option value="viewer" selected>Can view</option>
+                    <option value="remove">Remove</option>
+                </select>
+            </div>
+
+            <div class="invite-row">
+                <input type="text" class="invite-input" placeholder="Invite by email..." id="inviteInput">
+                <button class="invite-btn" id="inviteBtn">Invite</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+    // ===== Canvas Drawing Engine =====
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let state = {
+        tool: 'brush',
+        color: '#1a1a2e',
+        size: 5,
+        opacity: 1,
+        isDrawing: false,
+        startX: 0,
+        startY: 0,
+        strokes: [],
+        undoneStrokes: [],
+        currentPath: [],
+        strokeCount: 0,
+    };
+
+    // Save canvas state for undo
+    let history = [];
+    let historyIndex = -1;
+
+    function saveState() {
+        historyIndex++;
+        history = history.slice(0, historyIndex);
+        history.push(canvas.toDataURL());
+        if (history.length > 50) { history.shift(); historyIndex--; }
+    }
+
+    function undo() {
+        if (historyIndex > 0) {
+            historyIndex--;
+            const img = new Image();
+            img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); };
+            img.src = history[historyIndex];
+            state.strokeCount = Math.max(0, state.strokeCount - 1);
+            updateStrokeCount();
+            showToast('↶ Undone');
+        }
+    }
+
+    function redo() {
+        if (historyIndex < history.length - 1) {
+            historyIndex++;
+            const img = new Image();
+            img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); };
+            img.src = history[historyIndex];
+            state.strokeCount++;
+            updateStrokeCount();
+            showToast('↷ Redone');
+        }
+    }
+
+    // Initial state
+    saveState();
+
+    // Drawing handlers
+    canvas.addEventListener('mousedown', (e) => {
+        state.isDrawing = true;
+        state.startX = e.offsetX;
+        state.startY = e.offsetY;
+
+        if (state.tool === 'brush' || state.tool === 'pencil' || state.tool === 'eraser') {
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        document.getElementById('cursorPos').textContent = `X: ${e.offsetX} Y: ${e.offsetY}`;
+
+        if (!state.isDrawing) return;
+
+        ctx.globalAlpha = state.opacity;
+
+        if (state.tool === 'brush') {
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = state.color;
+            ctx.lineWidth = state.size;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        } else if (state.tool === 'pencil') {
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = state.color;
+            ctx.lineWidth = 1;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        } else if (state.tool === 'eraser') {
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = state.size * 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        }
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+        if (!state.isDrawing) return;
+        state.isDrawing = false;
+
+        ctx.globalAlpha = state.opacity;
+
+        // Shape tools
+        const dx = e.offsetX - state.startX;
+        const dy = e.offsetY - state.startY;
+
+        if (state.tool === 'line') {
+            ctx.beginPath();
+            ctx.moveTo(state.startX, state.startY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = state.color;
+            ctx.lineWidth = state.size;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        } else if (state.tool === 'rect') {
+            ctx.strokeStyle = state.color;
+            ctx.lineWidth = state.size;
+            ctx.strokeRect(state.startX, state.startY, dx, dy);
+        } else if (state.tool === 'circle') {
+            const rx = Math.abs(dx) / 2;
+            const ry = Math.abs(dy) / 2;
+            const cx = state.startX + dx / 2;
+            const cy = state.startY + dy / 2;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = state.color;
+            ctx.lineWidth = state.size;
+            ctx.stroke();
+        } else if (state.tool === 'triangle') {
+            ctx.beginPath();
+            ctx.moveTo(state.startX + dx / 2, state.startY);
+            ctx.lineTo(state.startX + dx, state.startY + dy);
+            ctx.lineTo(state.startX, state.startY + dy);
+            ctx.closePath();
+            ctx.strokeStyle = state.color;
+            ctx.lineWidth = state.size;
+            ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1;
+        state.strokeCount++;
+        updateStrokeCount();
+        saveState();
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        if (state.isDrawing) {
+            state.isDrawing = false;
+            state.strokeCount++;
+            updateStrokeCount();
+            saveState();
+        }
+    });
+
+    function updateStrokeCount() {
+        document.getElementById('strokeCount').textContent = `Strokes: ${state.strokeCount}`;
+    }
+
+    // ===== Tool Selection =====
+    document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.tool = btn.dataset.tool;
+            document.getElementById('toolDisplay').textContent = btn.title;
+
+            canvas.className = state.tool === 'eraser' ? 'eraser-cursor' : '';
+        });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        const shortcuts = { b: 'brush', p: 'pencil', e: 'eraser', l: 'line', r: 'rect', c: 'circle', t: 'triangle', x: 'text', f: 'fill', i: 'eyedropper' };
+        if (shortcuts[e.key]) {
+            const btn = document.querySelector(`.tool-btn[data-tool="${shortcuts[e.key]}"]`);
+            if (btn) btn.click();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+            e.preventDefault();
+            if (e.shiftKey) redo(); else undo();
+        }
+    });
+
+    // ===== Color Palette =====
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            swatch.classList.add('active');
+            state.color = swatch.dataset.color;
+        });
+    });
+
+    document.getElementById('colorPicker').addEventListener('input', (e) => {
+        state.color = e.target.value;
+        document.querySelector('.color-custom-preview').style.background = e.target.value;
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    });
+
+    // ===== Size & Opacity =====
+    document.getElementById('sizeSlider').addEventListener('input', (e) => {
+        state.size = parseInt(e.target.value);
+        document.getElementById('sizeValue').textContent = state.size;
+        const dotSize = Math.max(3, Math.min(24, state.size));
+        const dot = document.getElementById('sizeDot');
+        dot.style.width = dotSize + 'px';
+        dot.style.height = dotSize + 'px';
+    });
+
+    document.getElementById('opacitySlider').addEventListener('input', (e) => {
+        state.opacity = parseInt(e.target.value) / 100;
+        document.getElementById('opacityValue').textContent = e.target.value + '%';
+    });
+
+    // ===== Action Buttons =====
+    document.getElementById('undoBtn').addEventListener('click', undo);
+    document.getElementById('redoBtn').addEventListener('click', redo);
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        state.strokeCount = 0;
+        updateStrokeCount();
+        saveState();
+        showToast('Canvas cleared');
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = 'atelier-canvas.png';
+        link.href = canvas.toDataURL();
+        link.click();
+        showToast('💾 Canvas saved!');
+    });
+
+    // ===== Panel Tabs =====
+    document.querySelectorAll('.panel-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('panelLayers').style.display = tab.dataset.panel === 'layers' ? '' : 'none';
+            document.getElementById('panelActivity').style.display = tab.dataset.panel === 'activity' ? '' : 'none';
+            document.getElementById('panelChat').style.display = tab.dataset.panel === 'chat' ? 'flex' : 'none';
+        });
+    });
+
+    // ===== Chat =====
+    function addChatMessage(name, initial, color, text) {
+        const now = new Date();
+        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg';
+        msgDiv.innerHTML = `
+            <div class="chat-msg-avatar" style="background:${color};">${initial}</div>
+            <div class="chat-msg-content">
+                <div class="chat-msg-header">
+                    <span class="chat-msg-name">${name}</span>
+                    <span class="chat-msg-time">${time}</span>
+                </div>
+                <div class="chat-msg-body">${text}</div>
+            </div>
+        `;
+        document.getElementById('chatMessages').appendChild(msgDiv);
+        document.getElementById('chatMessages').scrollTop = 9999;
+    }
+
+    document.getElementById('chatSend').addEventListener('click', sendChat);
+    document.getElementById('chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+
+    function sendChat() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+        addChatMessage('You', 'Y', 'var(--accent)', text);
+        input.value = '';
+
+        // Simulated reply
+        setTimeout(() => {
+            const replies = [
+                { name: 'Maya', i: 'M', c: 'var(--teal)', texts: ['Nice work! 👏', 'I see what you did there!', 'Should we add more texture?', 'Love the color choice!'] },
+                { name: 'Jake', i: 'J', c: 'var(--violet)', texts: ['Looking good!', 'I\'ll add some shapes to complement that.', 'Great idea!', 'Let me try something on my layer.'] },
+            ];
+            const r = replies[Math.floor(Math.random() * replies.length)];
+            addChatMessage(r.name, r.i, r.c, r.texts[Math.floor(Math.random() * r.texts.length)]);
+        }, 1500 + Math.random() * 2000);
+    }
+
+    // ===== Share Modal =====
+    document.getElementById('shareBtn').addEventListener('click', () => {
+        document.getElementById('shareModal').classList.add('open');
+    });
+
+    document.getElementById('modalClose').addEventListener('click', () => {
+        document.getElementById('shareModal').classList.remove('open');
+    });
+
+    document.getElementById('shareModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('shareModal')) {
+            document.getElementById('shareModal').classList.remove('open');
+        }
+    });
+
+    document.getElementById('copyLink').addEventListener('click', () => {
+        const btn = document.getElementById('copyLink');
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy Link'; btn.classList.remove('copied'); }, 2000);
+    });
+
+    document.getElementById('inviteBtn').addEventListener('click', () => {
+        const input = document.getElementById('inviteInput');
+        if (input.value.includes('@')) {
+            showToast(`📨 Invite sent to ${input.value}`);
+            input.value = '';
+        }
+    });
+
+    // ===== Toast Notifications =====
+    function showToast(message) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('leaving');
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+
+    // ===== Simulated Cursor Movement =====
+    function animateCursors() {
+        const maya = document.getElementById('cursor-maya');
+        const jake = document.getElementById('cursor-jake');
+        const workspace = document.getElementById('canvasWorkspace');
+        const rect = workspace.getBoundingClientRect();
+
+        function moveCursor(el) {
+            const newX = 100 + Math.random() * (rect.width - 200);
+            const newY = 80 + Math.random() * (rect.height - 160);
+            el.style.left = newX + 'px';
+            el.style.top = newY + 'px';
+        }
+
+        setInterval(() => moveCursor(maya), 3000 + Math.random() * 2000);
+        setInterval(() => moveCursor(jake), 4000 + Math.random() * 2000);
+    }
+    animateCursors();
+
+    // ===== Zoom controls (UI only) =====
+    let zoom = 100;
+    document.getElementById('zoomIn').addEventListener('click', () => {
+        zoom = Math.min(200, zoom + 10);
+        document.getElementById('zoomLevel').textContent = zoom + '%';
+        canvas.style.transform = `scale(${zoom/100})`;
+    });
+    document.getElementById('zoomOut').addEventListener('click', () => {
+        zoom = Math.max(25, zoom - 10);
+        document.getElementById('zoomLevel').textContent = zoom + '%';
+        canvas.style.transform = `scale(${zoom/100})`;
+    });
+
+    // ===== New Canvas =====
+    document.getElementById('newCanvasBtn').addEventListener('click', () => {
+        showToast('✨ New canvas created!');
+    });
+
+    // ===== Simulated activity feed =====
+    const activities = [
+        { name: 'Maya', i: 'M', c: 'var(--teal)', msg: 'is drawing on the canvas' },
+        { name: 'Jake', i: 'J', c: 'var(--violet)', msg: 'changed brush size to 12px' },
+        { name: 'Maya', i: 'M', c: 'var(--teal)', msg: 'switched to the eraser tool' },
+        { name: 'Jake', i: 'J', c: 'var(--violet)', msg: 'selected a new color' },
+    ];
+
+    setInterval(() => {
+        const a = activities[Math.floor(Math.random() * activities.length)];
+        // Show as a subtle toast
+        showToast(`${a.name} ${a.msg}`);
+    }, 12000);
+
+    // Startup toast
+    setTimeout(() => showToast('🎨 Maya and Jake are collaborating live'), 1500);
+</script>
+</body>
+</html>
