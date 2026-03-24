@@ -82,20 +82,28 @@ export default function Canvas({
 
     socket.onmessage = (event) => {
       try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-        switch (message.type) {
+        const msg = JSON.parse(event.data);
+        switch (msg.type) {
+          case 'session_users':
+            setActiveUsers(() =>
+              msg.users.map((u: { id: string; name: string }) => ({
+                ...u,
+                color: generateUserColor(u.id),
+              }))
+            );
+            break;
           case 'stroke':
-            setRemoteStrokes((prev) => [...prev, message.stroke]);
+            setRemoteStrokes((prev) => [...prev, msg.stroke]);
             break;
           case 'user_joined':
             setActiveUsers((prev) => {
-              const exists = prev.find((u) => u.id === message.user.id);
+              const exists = prev.find((u) => u.id === msg.user.id);
               if (exists) return prev;
-              const newUser = { ...message.user, color: generateUserColor(message.user.id) };
+              const newUser = { ...msg.user, color: generateUserColor(msg.user.id) };
               setActivityLog((log) => [...log, {
                 id: generateId(),
-                avatar: message.user.name.charAt(0).toUpperCase(),
-                name: message.user.name,
+                avatar: msg.user.name.charAt(0).toUpperCase(),
+                name: msg.user.name,
                 action: 'joined the session',
                 time: new Date(),
               }]);
@@ -104,7 +112,7 @@ export default function Canvas({
             break;
           case 'user_left':
             setActiveUsers((prev) => {
-              const user = prev.find((u) => u.id === message.userId);
+              const user = prev.find((u) => u.id === msg.userId);
               if (user) {
                 setActivityLog((log) => [...log, {
                   id: generateId(),
@@ -114,12 +122,12 @@ export default function Canvas({
                   time: new Date(),
                 }]);
               }
-              return prev.filter((u) => u.id !== message.userId);
+              return prev.filter((u) => u.id !== msg.userId);
             });
             break;
           case 'cursor_update':
             setActiveUsers((prev) =>
-              prev.map((u) => (u.id === message.userId ? { ...u, cursor: message.cursor } : u))
+              prev.map((u) => (u.id === msg.userId ? { ...u, cursor: msg.cursor } : u))
             );
             break;
         }

@@ -4,34 +4,46 @@ import HomePage from './HomePage';
 import { generateId } from '../types/canvas';
 
 export default function App() {
+  // null = not yet decided, '' = home page, 'CODE' = in canvas
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
   const [userId] = useState(() => generateId());
 
-  // On mount, check URL for ?session=CODE
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('session');
-    if (code) setSessionId(code.toUpperCase());
+    if (code) {
+      // Someone followed a share link — prompt for name before entering
+      setPendingCode(code.toUpperCase());
+    }
+    setSessionId(''); // signal that we've checked the URL
   }, []);
 
   function handleEnterSession(id: string, name: string) {
     setSessionId(id);
     setUserName(name);
-    // Update URL so the link is shareable
     const url = new URL(window.location.href);
     url.searchParams.set('session', id);
     window.history.pushState({}, '', url.toString());
   }
 
+  // Still reading URL params
+  if (sessionId === null) return null;
+
   if (!sessionId) {
-    return <HomePage onEnterSession={handleEnterSession} />;
+    return (
+      <HomePage
+        onEnterSession={handleEnterSession}
+        initialJoinCode={pendingCode}
+      />
+    );
   }
 
   return (
     <Canvas
       userId={userId}
-      userName={userName || 'Guest'}
+      userName={userName}
       sessionId={sessionId}
     />
   );
