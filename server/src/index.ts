@@ -4,18 +4,24 @@ import { WebSocketServer, WebSocket } from "ws";
 
 import { config } from "./config";
 import authRoutes from "./routes/auth.routes";
+import sessionRoutes from "./routes/session.routes";
 import { initDB } from "./db/database";
 import { createTables } from "./db/schema";
 
-const connectedClients = new Set<WebSocket>();
+// session id → set of clients in that session
+const sessionRooms = new Map<string, Set<WebSocket>>();
+// client → session id
+const clientSessions = new Map<WebSocket, string>();
 
 const wss = new WebSocketServer({
   port: config.wsPort,
   host: config.host,
 });
 
-function broadcast(sender: WebSocket, message: Buffer) {
-  connectedClients.forEach((client) => {
+function broadcastToSession(sender: WebSocket, sessionId: string, message: Buffer) {
+  const room = sessionRooms.get(sessionId);
+  if (!room) return;
+  room.forEach((client) => {
     if (client !== sender && client.readyState === WebSocket.OPEN) {
       client.send(message);
     }
@@ -25,16 +31,49 @@ function broadcast(sender: WebSocket, message: Buffer) {
 function setupWebSocketServer() {
   wss.on("connection", (ws: WebSocket) => {
     console.log("Client connected");
-    connectedClients.add(ws);
 
     ws.on("message", (message: Buffer) => {
-      console.log("Received:", message.toString());
-      broadcast(ws, message);
+      try {
+        const data = JSON.parse(message.toString());
+
+        if (data.type === "join_session") {
+          const sessionId: string = String(data.sessionId || "default").toUpperCase();
+
+          // Leave any previous session
+          const prev = clientSessions.get(ws);
+          if (prev) {
+            sessionRooms.get(prev)?.delete(ws);
+          }
+
+          if (!sessionRooms.has(sessionId)) {
+            sessionRooms.set(sessionId, new Set());
+          }
+          sessionRooms.get(sessionId)!.add(ws);
+          clientSessions.set(ws, sessionId);
+
+          // Notify others in the session that this user joined
+          broadcastToSession(ws, sessionId, message);
+        } else {
+          const sessionId = clientSessions.get(ws);
+          if (sessionId) {
+            broadcastToSession(ws, sessionId, message);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse WS message:", err);
+      }
     });
 
     ws.on("close", () => {
       console.log("Client disconnected");
-      connectedClients.delete(ws);
+      const sessionId = clientSessions.get(ws);
+      if (sessionId) {
+        sessionRooms.get(sessionId)?.delete(ws);
+        if (sessionRooms.get(sessionId)?.size === 0) {
+          sessionRooms.delete(sessionId);
+        }
+        clientSessions.delete(ws);
+      }
     });
 
     ws.on("error", (error) => {
@@ -50,6 +89,7 @@ function setupApiServer() {
   app.use(express.json());
 
   app.use("/auth", authRoutes);
+  app.use("/sessions", sessionRoutes);
 
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
