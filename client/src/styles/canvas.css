@@ -1259,3 +1259,76 @@ html, body {
 @media (max-width: 540px) {
   .session-cards { grid-template-columns: 1fr; }
 }
+
+/* ===== HOVER ATTRIBUTION TOOLTIP ===== */
+.hover-tooltip {
+  position: fixed;
+  background: rgba(26,26,46,0.92);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 9999;
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== LAYER ACTION BUTTONS ===== */
+.layer-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.layer-btn {
+  background: none;
+  border: none;
+  color: var(--slate-500);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  line-height: 0;
+}
+.layer-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+.layer-btn--active { color: var(--sky) !important; }
+.layer-btn--muted { color: var(--slate-700) !important; }
+
+/* Fix layer-item flex so actions sit on the right */
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== DANGER ACTION BUTTON (delete selected) ===== */
+.action-btn--danger {
+  background: rgba(225,29,72,0.12);
+  color: var(--rose);
+  border: 1px solid rgba(225,29,72,0.25);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.action-btn--danger:hover { background: rgba(225,29,72,0.22); }
+
+/* ===== PANEL SECTION TITLE FLEX ===== */
+.panel-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
