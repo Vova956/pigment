@@ -3,6 +3,7 @@ import { PenToolHandler } from './PenToolHandler';
 import { HighlighterToolHandler } from './HighlighterToolHandler';
 import { EraserToolHandler } from './EraserToolHandler';
 import { LassoToolHandler } from './LassoToolHandler';
+import { TextToolHandler } from './TextToolHandler';
 import type { DrawingTool } from '../types/canvas';
 
 /**
@@ -17,6 +18,7 @@ export class ToolHandlerFactory {
       case 'highlighter': return new HighlighterToolHandler(tool);
       case 'eraser':      return new EraserToolHandler(tool);
       case 'lasso':       return new LassoToolHandler(tool);
+      case 'text':        return new TextToolHandler(tool);
     }
   }
 }

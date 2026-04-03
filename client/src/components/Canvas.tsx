@@ -6,13 +6,14 @@ import CanvasDrawingSurface from './canvas/CanvasDrawingSurface';
 import CanvasRightPanel from './canvas/CanvasRightPanel';
 import ShareModal from './canvas/ShareModal';
 
-import type { Point, DrawingTool, User, LayerData, ActivityEvent, ChatMessage } from '../types/canvas';
+import type { Point, DrawingTool, User, LayerData, ActivityEvent, ChatMessage, CanvasImage, CanvasText } from '../types/canvas';
 import { generateId } from '../types/canvas';
 
 import { GeometryService } from '../services/GeometryService';
 import { UserColorService } from '../services/UserColorService';
 import { CanvasExporter } from '../services/CanvasExporter';
 import { ClipboardService } from '../services/ClipboardService';
+import { ImageService } from '../services/ImageService';
 import { ToolHandlerFactory } from '../tools/ToolHandlerFactory';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -52,6 +53,14 @@ export default function Canvas({
   const [isDrawing, setIsDrawing]       = useState(false);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
   const [tool, setTool]                 = useState<DrawingTool>({ type: 'pen', color: '#1a1a2e', width: 3 });
+
+  // ── Images ───────────────────────────────────────────────────────────────────
+  const [images, setImages] = useState<CanvasImage[]>([]);
+
+  // ── Texts ────────────────────────────────────────────────────────────────────
+  const [texts, setTexts] = useState<CanvasText[]>([]);
+  const [pendingText, setPendingText] = useState<{ svgX: number; svgY: number; clientX: number; clientY: number } | null>(null);
+  const [textInput, setTextInput] = useState('');
 
   // ── Lasso ────────────────────────────────────────────────────────────────────
   const [lassoPoints, setLassoPoints]   = useState<Point[]>([]);
@@ -188,6 +197,16 @@ export default function Canvas({
               for (const [uid, l] of Object.entries(prev)) next[uid] = { ...l, strokes: [] };
               return next;
             });
+            setImages([]);
+            setTexts([]);
+            break;
+
+          case 'image':
+            setImages(prev => [...prev, msg.image as CanvasImage]);
+            break;
+
+          case 'text':
+            setTexts(prev => [...prev, msg.canvasText as CanvasText]);
             break;
 
           case 'chat_message':
@@ -209,6 +228,14 @@ export default function Canvas({
     if (!svgRef.current) return;
     const pt = GeometryService.getSvgCoords(e, svgRef.current);
     if (!pt) return;
+
+    // Text tool: place an input overlay instead of starting a stroke
+    if (tool.type === 'text') {
+      const { x: clientX, y: clientY } = GeometryService.getClientCoords(e);
+      setPendingText({ svgX: pt.x, svgY: pt.y, clientX, clientY });
+      setTextInput('');
+      return;
+    }
 
     setHoverInfo(null);
     erasedThisGesture.current.clear();
@@ -327,7 +354,7 @@ export default function Canvas({
     broadcast({ type: 'strokes_erased', strokeIds: [last.id] });
   }, [userId, removeStrokeIds, broadcast]);
 
-  // ── Clear all layers ──────────────────────────────────────────────────────────
+  // ── Clear all layers + images ─────────────────────────────────────────────────
 
   const clearCanvas = useCallback(() => {
     setLayers(prev => {
@@ -335,8 +362,52 @@ export default function Canvas({
       for (const [uid, l] of Object.entries(prev)) next[uid] = { ...l, strokes: [] };
       return next;
     });
+    setImages([]);
+    setTexts([]);
     broadcast({ type: 'clear_canvas', sessionId });
   }, [sessionId, broadcast]);
+
+  // ── Text commit ───────────────────────────────────────────────────────────────
+
+  const commitText = useCallback(() => {
+    if (!pendingText || !textInput.trim()) {
+      setPendingText(null);
+      setTextInput('');
+      return;
+    }
+    const canvasText: CanvasText = {
+      id: generateId(),
+      userId,
+      userName,
+      text: textInput.trim(),
+      x: pendingText.svgX,
+      y: pendingText.svgY,
+      fontSize: Math.max(tool.width, 12),
+      color: tool.color,
+      timestamp: Date.now(),
+    };
+    setTexts(prev => [...prev, canvasText]);
+    broadcast({ type: 'text', canvasText });
+    addActivity(userName[0].toUpperCase(), 'You', 'added text');
+    setPendingText(null);
+    setTextInput('');
+  }, [pendingText, textInput, userId, userName, tool.width, tool.color, broadcast, addActivity]);
+
+  // ── Image upload ──────────────────────────────────────────────────────────────
+
+  const uploadImage = useCallback((file: File) => {
+    ImageService.processFile(file).then(({ dataUrl, width, height }) => {
+      const svg = svgRef.current;
+      const x = svg ? Math.round(svg.clientWidth  / 2 - width  / 2) : 100;
+      const y = svg ? Math.round(svg.clientHeight / 2 - height / 2) : 100;
+      const image: CanvasImage = {
+        id: generateId(), userId, userName, dataUrl, x, y, width, height, timestamp: Date.now(),
+      };
+      setImages(prev => [...prev, image]);
+      broadcast({ type: 'image', image });
+      addActivity(userName[0].toUpperCase(), 'You', 'added an image');
+    }).catch(err => console.error('Image upload failed:', err));
+  }, [userId, userName, broadcast, addActivity]);
 
   // ── Export ────────────────────────────────────────────────────────────────────
 
@@ -458,11 +529,14 @@ export default function Canvas({
           onUndo={undo}
           onClear={clearCanvas}
           onExport={exportCanvas}
+          onImageUpload={uploadImage}
         />
 
         {/* Drawing surface + stats bar */}
         <CanvasDrawingSurface
           svgRef={svgRef}
+          images={images}
+          texts={texts}
           layers={layers}
           soloUserId={soloUserId}
           selectedIds={selectedIds}
@@ -484,6 +558,39 @@ export default function Canvas({
           onTouchStart={startDrawing}
           onTouchMove={draw}
         />
+
+        {/* ── Floating text input overlay ── */}
+        {pendingText && (() => {
+          const rect = svgRef.current?.getBoundingClientRect();
+          const left = rect ? rect.left + pendingText.svgX : pendingText.clientX;
+          const top  = rect ? rect.top  + pendingText.svgY : pendingText.clientY;
+          return (
+            <input
+              autoFocus
+              type="text"
+              value={textInput}
+              onChange={e => setTextInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') commitText();
+                if (e.key === 'Escape') { setPendingText(null); setTextInput(''); }
+              }}
+              onBlur={commitText}
+              style={{
+                position: 'fixed',
+                left,
+                top,
+                font: `${Math.max(tool.width, 12)}px sans-serif`,
+                color: tool.color,
+                background: 'transparent',
+                border: 'none',
+                outline: '1.5px dashed #0284c7',
+                padding: '0 2px',
+                minWidth: 80,
+                zIndex: 100,
+              }}
+            />
+          );
+        })()}
       </div>
 
       {/* ── Right panel ── */}

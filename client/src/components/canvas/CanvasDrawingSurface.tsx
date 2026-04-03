@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import type { Point, Stroke, DrawingTool, User, LayerData } from '../../types/canvas';
+import type { Point, Stroke, DrawingTool, User, LayerData, CanvasImage, CanvasText } from '../../types/canvas';
 import { pointsToSvgPath, HIGHLIGHTER_OPACITY } from '../../types/canvas';
 
 interface HoverInfo {
@@ -10,6 +10,8 @@ interface HoverInfo {
 
 interface CanvasDrawingSurfaceProps {
   svgRef: RefObject<SVGSVGElement>;
+  images: CanvasImage[];
+  texts: CanvasText[];
   layers: Record<string, LayerData>;
   soloUserId: string | null;
   selectedIds: Set<string>;
@@ -67,6 +69,8 @@ function StrokeLayer({ strokes, selectedIds }: { strokes: Stroke[]; selectedIds:
 
 export default function CanvasDrawingSurface({
   svgRef,
+  images,
+  texts,
   layers,
   soloUserId,
   selectedIds,
@@ -105,6 +109,35 @@ export default function CanvasDrawingSurface({
           preserveAspectRatio="xMidYMid slice"
         >
           <rect width="100%" height="100%" fill="white" />
+
+          {/* Uploaded images — rendered below all strokes */}
+          {images.map(img => (
+            <image
+              key={img.id}
+              href={img.dataUrl}
+              x={img.x}
+              y={img.y}
+              width={img.width}
+              height={img.height}
+              style={{ pointerEvents: 'none' }}
+            />
+          ))}
+
+          {/* Text elements — above images, below strokes */}
+          {texts.map(ct => (
+            <text
+              key={ct.id}
+              x={ct.x}
+              y={ct.y}
+              fontSize={ct.fontSize}
+              fill={ct.color}
+              fontFamily="sans-serif"
+              dominantBaseline="hanging"
+              style={{ pointerEvents: 'none', userSelect: 'none' }}
+            >
+              {ct.text}
+            </text>
+          ))}
 
           {/* Committed strokes per user layer */}
           {Object.entries(layers).map(([uid, layer]) => {

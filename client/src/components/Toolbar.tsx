@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { DrawingTool } from '../types/canvas';
 
 const PALETTE_COLORS = [
@@ -11,16 +12,27 @@ interface ToolbarProps {
   onUndo: () => void;
   onClear: () => void;
   onExport: () => void;
+  onImageUpload: (file: File) => void;
   disabled?: boolean;
 }
 
-export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport, disabled = false }: ToolbarProps) {
+export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport, onImageUpload, disabled = false }: ToolbarProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const setType = (type: DrawingTool['type']) => onToolChange({ ...tool, type });
   const setColor = (color: string) => onToolChange({ ...tool, color });
   const setWidth = (width: number) => onToolChange({ ...tool, width });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onImageUpload(file);
+    // Reset so the same file can be re-uploaded if needed
+    e.target.value = '';
+  };
+
   const dotSize = Math.min(Math.max(tool.width, 3), 22);
   const noColor = tool.type === 'eraser' || tool.type === 'lasso';
+  const sizeLabel = tool.type === 'text' ? 'Font' : 'Size';
 
   return (
     <div className={`toolbar${disabled ? ' toolbar--disabled' : ''}`}>
@@ -74,6 +86,19 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
             <line x1="9" y1="22" x2="15" y2="22" strokeDasharray="none"/>
           </svg>
         </button>
+        <button
+          className={`tool-btn${tool.type === 'text' ? ' active' : ''}`}
+          onClick={() => setType('text')}
+          disabled={disabled}
+          title="Text"
+        >
+          <span className="tooltip">Text</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="4 7 4 4 20 4 20 7"/>
+            <line x1="9" y1="20" x2="15" y2="20"/>
+            <line x1="12" y1="4" x2="12" y2="20"/>
+          </svg>
+        </button>
       </div>
 
       <div className="toolbar-separator" />
@@ -109,7 +134,7 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
       {/* Brush / eraser size (hidden for lasso) */}
       {tool.type !== 'lasso' && (
         <div className="size-control">
-          <span className="size-control-label">Size</span>
+          <span className="size-control-label">{sizeLabel}</span>
           <div className="size-preview">
             <div className="size-dot" style={{ width: dotSize, height: dotSize }} />
           </div>
@@ -127,6 +152,26 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
       )}
 
       <div className="toolbar-actions">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+        <button
+          className="action-btn"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
+          title="Upload image"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          Image
+        </button>
         <button className="action-btn" onClick={onUndo} disabled={disabled} title="Undo">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="1 4 1 10 7 10"/>
