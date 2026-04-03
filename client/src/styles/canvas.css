@@ -984,3 +984,351 @@ html, body {
   .right-panel { display: none; }
   .toolbar { padding: 6px 10px; gap: 6px; }
 }
+
+/* ===== HOME PAGE ===== */
+.home-page {
+  width: 100vw;
+  height: 100vh;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.home-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 560px;
+  padding: 40px 24px;
+}
+
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.home-brand-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+}
+
+.home-brand-name {
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.home-tagline {
+  color: var(--slate-400);
+  font-size: 15px;
+  margin-top: -16px;
+}
+
+.guest-row {
+  width: 100%;
+}
+
+.logged-in-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--slate-300);
+  font-size: 14px;
+}
+
+.logged-in-label strong {
+  color: white;
+}
+
+.session-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.session-card {
+  background: #16162a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.session-card-icon {
+  font-size: 24px;
+  color: var(--accent);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.session-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.session-card-desc {
+  font-size: 13px;
+  color: var(--slate-400);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.code-input {
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate-400);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.form-input:focus {
+  border-color: var(--accent);
+}
+
+.form-input::placeholder {
+  color: var(--slate-500);
+}
+
+.form-error {
+  color: var(--rose);
+  font-size: 13px;
+  text-align: center;
+}
+
+.join-error {
+  margin-top: -8px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+  width: 100%;
+}
+
+.btn-primary:hover:not(:disabled) { opacity: 0.88; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: rgba(255,255,255,0.07);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  width: 100%;
+}
+
+.btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.11); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.auth-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--slate-400);
+}
+
+.auth-sep { color: var(--slate-600); }
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.auth-card {
+  background: #16162a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 28px 28px 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 4px;
+}
+
+.auth-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--slate-400);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 6px 16px 12px;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.auth-tab.active {
+  color: white;
+  border-bottom-color: var(--accent);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-back {
+  background: none;
+  border: none;
+  color: var(--slate-400);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  padding: 0;
+}
+
+.auth-back:hover { color: white; }
+
+@media (max-width: 540px) {
+  .session-cards { grid-template-columns: 1fr; }
+}
+
+/* ===== HOVER ATTRIBUTION TOOLTIP ===== */
+.hover-tooltip {
+  position: fixed;
+  background: rgba(26,26,46,0.92);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 9999;
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== LAYER ACTION BUTTONS ===== */
+.layer-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.layer-btn {
+  background: none;
+  border: none;
+  color: var(--slate-500);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  line-height: 0;
+}
+.layer-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+.layer-btn--active { color: var(--sky) !important; }
+.layer-btn--muted { color: var(--slate-700) !important; }
+
+/* Fix layer-item flex so actions sit on the right */
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== DANGER ACTION BUTTON (delete selected) ===== */
+.action-btn--danger {
+  background: rgba(225,29,72,0.12);
+  color: var(--rose);
+  border: 1px solid rgba(225,29,72,0.25);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.action-btn--danger:hover { background: rgba(225,29,72,0.22); }
+
+/* ===== PANEL SECTION TITLE FLEX ===== */
+.panel-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

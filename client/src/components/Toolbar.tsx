@@ -20,10 +20,10 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
   const setWidth = (width: number) => onToolChange({ ...tool, width });
 
   const dotSize = Math.min(Math.max(tool.width, 3), 22);
+  const noColor = tool.type === 'eraser' || tool.type === 'lasso';
 
   return (
     <div className={`toolbar${disabled ? ' toolbar--disabled' : ''}`}>
-      {/* Drawing tools */}
       <div className="tool-group">
         <button
           className={`tool-btn${tool.type === 'pen' ? ' active' : ''}`}
@@ -31,7 +31,7 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
           disabled={disabled}
           title="Pen"
         >
-          <span className="tooltip">Pen (P)</span>
+          <span className="tooltip">Pen</span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
           </svg>
@@ -42,7 +42,7 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
           disabled={disabled}
           title="Highlighter"
         >
-          <span className="tooltip">Highlighter (H)</span>
+          <span className="tooltip">Highlighter</span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 19l7-7 3 3-7 7-3-3z"/>
             <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
@@ -55,24 +55,37 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
           disabled={disabled}
           title="Eraser"
         >
-          <span className="tooltip">Eraser (E)</span>
+          <span className="tooltip">Eraser</span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M20 20H7L3 16l10-10 7 7-4 4"/>
             <path d="M7 20l3-3"/>
+          </svg>
+        </button>
+        <button
+          className={`tool-btn${tool.type === 'lasso' ? ' active' : ''}`}
+          onClick={() => setType('lasso')}
+          disabled={disabled}
+          title="Lasso Select"
+        >
+          <span className="tooltip">Lasso Select</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 2">
+            <ellipse cx="12" cy="11" rx="9" ry="7"/>
+            <line x1="12" y1="18" x2="12" y2="22" strokeDasharray="none"/>
+            <line x1="9" y1="22" x2="15" y2="22" strokeDasharray="none"/>
           </svg>
         </button>
       </div>
 
       <div className="toolbar-separator" />
 
-      {/* Color palette */}
+      {/* Color palette — disabled for eraser / lasso */}
       <div className="color-palette">
         {PALETTE_COLORS.map((color) => (
           <button
             key={color}
             className={`color-swatch${tool.color === color ? ' active' : ''}`}
             onClick={() => setColor(color)}
-            disabled={disabled || tool.type === 'eraser'}
+            disabled={disabled || noColor}
             style={{
               backgroundColor: color,
               boxShadow: color === '#ffffff' ? 'inset 0 0 0 1px #cbd5e1' : undefined,
@@ -85,7 +98,7 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
             type="color"
             value={tool.color}
             onChange={(e) => setColor(e.target.value)}
-            disabled={disabled || tool.type === 'eraser'}
+            disabled={disabled || noColor}
           />
           <div className="color-custom-preview" style={{ background: tool.color }} />
         </div>
@@ -93,44 +106,42 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
 
       <div className="toolbar-separator" />
 
-      {/* Brush size */}
-      <div className="size-control">
-        <span className="size-control-label">Size</span>
-        <div className="size-preview">
-          <div
-            className="size-dot"
-            style={{ width: dotSize, height: dotSize }}
+      {/* Brush / eraser size (hidden for lasso) */}
+      {tool.type !== 'lasso' && (
+        <div className="size-control">
+          <span className="size-control-label">Size</span>
+          <div className="size-preview">
+            <div className="size-dot" style={{ width: dotSize, height: dotSize }} />
+          </div>
+          <input
+            type="range"
+            className="size-slider"
+            min="1"
+            max="60"
+            value={tool.width}
+            onChange={(e) => setWidth(Number(e.target.value))}
+            disabled={disabled}
           />
+          <span className="size-value">{tool.width}</span>
         </div>
-        <input
-          type="range"
-          className="size-slider"
-          min="1"
-          max="60"
-          value={tool.width}
-          onChange={(e) => setWidth(Number(e.target.value))}
-          disabled={disabled}
-        />
-        <span className="size-value">{tool.width}</span>
-      </div>
+      )}
 
-      {/* Action buttons */}
       <div className="toolbar-actions">
-        <button className="action-btn" onClick={onUndo} disabled={disabled} title="Undo (Ctrl+Z)">
+        <button className="action-btn" onClick={onUndo} disabled={disabled} title="Undo">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="1 4 1 10 7 10"/>
             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
           </svg>
           Undo
         </button>
-        <button className="action-btn" onClick={onClear} disabled={disabled} title="Clear canvas">
+        <button className="action-btn" onClick={onClear} disabled={disabled} title="Clear all">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
           Clear
         </button>
-        <button className="action-btn save" onClick={onExport} disabled={disabled} title="Export as PNG">
+        <button className="action-btn save" onClick={onExport} disabled={disabled} title="Export PNG">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
             <polyline points="17 21 17 13 7 13 7 21"/>

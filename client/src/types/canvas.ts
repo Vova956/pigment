@@ -15,7 +15,7 @@ export interface Stroke {
 }
 
 export interface DrawingTool {
-  type: 'pen' | 'eraser' | 'highlighter' | 'text';
+  type: 'pen' | 'eraser' | 'highlighter' | 'lasso';
   color: string;
   width: number;
 }
