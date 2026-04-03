@@ -15,9 +15,21 @@ export interface Stroke {
 }
 
 export interface DrawingTool {
-  type: 'pen' | 'eraser' | 'highlighter' | 'lasso';
+  type: 'pen' | 'eraser' | 'highlighter' | 'lasso' | 'text';
   color: string;
   width: number;
+}
+
+export interface CanvasText {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  color: string;
+  timestamp: number;
 }
 
 export interface User {
@@ -55,7 +67,7 @@ export type WebSocketMessage =
   | CursorUpdateMessage;
 
 export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
 export function pointsToSvgPath(points: Point[]): string {
@@ -95,6 +107,40 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
         b: parseInt(result[3], 16),
       }
     : null;
+}
+
+export interface CanvasImage {
+  id: string;
+  userId: string;
+  userName: string;
+  dataUrl: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  timestamp: number;
+}
+
+export interface LayerData {
+  userName: string;
+  visible: boolean;
+  strokes: Stroke[];
+}
+
+export interface ActivityEvent {
+  id: string;
+  avatar: string;
+  name: string;
+  action: string;
+  time: Date;
+}
+
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  time: Date;
 }
 
 export const HIGHLIGHTER_OPACITY = 0.4;
