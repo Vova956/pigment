@@ -97,6 +97,28 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
     : null;
 }
 
+export interface LayerData {
+  userName: string;
+  visible: boolean;
+  strokes: Stroke[];
+}
+
+export interface ActivityEvent {
+  id: string;
+  avatar: string;
+  name: string;
+  action: string;
+  time: Date;
+}
+
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  time: Date;
+}
+
 export const HIGHLIGHTER_OPACITY = 0.4;
 export const DEFAULT_COLORS = [
   '#000000',

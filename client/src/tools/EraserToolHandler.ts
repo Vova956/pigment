@@ -1,0 +1,33 @@
+import { DrawingToolHandler, type ToolMoveResult } from './DrawingToolHandler';
+import type { Point, LayerData } from '../types/canvas';
+import { GeometryService } from '../services/GeometryService';
+
+export class EraserToolHandler extends DrawingToolHandler {
+  get cursor(): string { return 'cell'; }
+  get hasStrokePreview(): boolean { return false; }
+
+  /**
+   * On each move step, find strokes that the eraser radius now touches
+   * that haven't already been erased this gesture.
+   * Returns them as `newlyErasedIds` so the caller can apply the deletion.
+   */
+  override onMove(
+    pt: Point,
+    currentPoints: Point[],
+    layers: Record<string, LayerData>,
+    erasedThisGesture: ReadonlySet<string>,
+  ): ToolMoveResult {
+    const radius = Math.max(this.tool.width, 8);
+    const newlyErasedIds: string[] = [];
+
+    for (const layer of Object.values(layers)) {
+      for (const stroke of layer.strokes) {
+        if (!erasedThisGesture.has(stroke.id) && GeometryService.strokeHitsPoint(stroke, pt, radius)) {
+          newlyErasedIds.push(stroke.id);
+        }
+      }
+    }
+
+    return { newPoints: [...currentPoints, pt], newlyErasedIds };
+  }
+}
