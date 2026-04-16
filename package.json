@@ -9,7 +9,9 @@
     "build:server": "cd server && npm run build",
     "lint": "npm run lint --prefix client && npm run lint --prefix server",
     "lint:fix": "npm run lint:fix --prefix client && npm run lint:fix --prefix server",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json}\" --ignore-path .prettierignore"
+    "format": "prettier --write \"**/*.{ts,tsx,js,json}\" --ignore-path .prettierignore",
+    "test": "npm run test --prefix client && npm run test --prefix server",
+    "test:coverage": "npm run test:coverage --prefix client && npm run test:coverage --prefix server"
   },
   "devDependencies": {
     "prettier": "^3.3.2"
