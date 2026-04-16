@@ -32,6 +32,7 @@ interface CanvasDrawingSurfaceProps {
   onMouseLeave: () => void;
   onTouchStart: (e: React.TouchEvent<SVGSVGElement>) => void;
   onTouchMove: (e: React.TouchEvent<SVGSVGElement>) => void;
+  onImageMouseDown: (imageId: string, e: React.MouseEvent<SVGImageElement>) => void;
 }
 
 function StrokeLayer({ strokes, selectedIds }: { strokes: Stroke[]; selectedIds: Set<string> }) {
@@ -91,6 +92,7 @@ export default function CanvasDrawingSurface({
   onMouseLeave,
   onTouchStart,
   onTouchMove,
+  onImageMouseDown,
 }: CanvasDrawingSurfaceProps) {
   return (
     <>
@@ -119,7 +121,8 @@ export default function CanvasDrawingSurface({
               y={img.y}
               width={img.width}
               height={img.height}
-              style={{ pointerEvents: 'none' }}
+              style={{ cursor: 'move' }}
+              onMouseDown={e => onImageMouseDown(img.id, e)}
             />
           ))}
 

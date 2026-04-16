@@ -56,6 +56,9 @@ export default function Canvas({
 
   // ── Images ───────────────────────────────────────────────────────────────────
   const [images, setImages] = useState<CanvasImage[]>([]);
+  const imagesRef = useRef<CanvasImage[]>([]);
+  useEffect(() => { imagesRef.current = images; }, [images]);
+  const draggingImageRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
 
   // ── Texts ────────────────────────────────────────────────────────────────────
   const [texts, setTexts] = useState<CanvasText[]>([]);
@@ -205,6 +208,12 @@ export default function Canvas({
             setImages(prev => [...prev, msg.image as CanvasImage]);
             break;
 
+          case 'image_move':
+            setImages(prev => prev.map(img =>
+              img.id === msg.imageId ? { ...img, x: msg.x, y: msg.y } : img
+            ));
+            break;
+
           case 'text':
             setTexts(prev => [...prev, msg.canvasText as CanvasText]);
             break;
@@ -250,12 +259,34 @@ export default function Canvas({
     setIsDrawing(true);
   }, [tool.type]);
 
+  // ── Image drag ────────────────────────────────────────────────────────────────
+
+  const handleImageMouseDown = useCallback((imageId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent canvas from starting a stroke
+    if (!svgRef.current) return;
+    const pt = GeometryService.getSvgCoords(e, svgRef.current);
+    if (!pt) return;
+    const img = imagesRef.current.find(i => i.id === imageId);
+    if (!img) return;
+    draggingImageRef.current = { id: imageId, offsetX: pt.x - img.x, offsetY: pt.y - img.y };
+  }, []);
+
   // ── Drawing: move ─────────────────────────────────────────────────────────────
 
   const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (!svgRef.current) return;
     const pt = GeometryService.getSvgCoords(e, svgRef.current);
     if (pt) setCursorPos(pt);
+
+    // Image drag takes priority — skip all drawing logic while dragging an image
+    if (draggingImageRef.current && pt) {
+      const { id, offsetX, offsetY } = draggingImageRef.current;
+      const x = Math.round(pt.x - offsetX);
+      const y = Math.round(pt.y - offsetY);
+      setImages(prev => prev.map(img => img.id === id ? { ...img, x, y } : img));
+      broadcast({ type: 'image_move', imageId: id, x, y });
+      return;
+    }
 
     // Hover attribution — only when idle
     if (!isDrawing && pt && tool.type !== 'lasso') {
@@ -452,7 +483,10 @@ export default function Canvas({
   // ── Global pointer-up ─────────────────────────────────────────────────────────
 
   useEffect(() => {
-    const up = () => { if (isDrawing) stopDrawing(); };
+    const up = () => {
+      if (draggingImageRef.current) { draggingImageRef.current = null; return; }
+      if (isDrawing) stopDrawing();
+    };
     window.addEventListener('mouseup', up);
     window.addEventListener('touchend', up);
     return () => { window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up); };
@@ -557,6 +591,7 @@ export default function Canvas({
           onMouseLeave={() => setHoverInfo(null)}
           onTouchStart={startDrawing}
           onTouchMove={draw}
+          onImageMouseDown={handleImageMouseDown}
         />
 
         {/* ── Floating text input overlay ── */}
