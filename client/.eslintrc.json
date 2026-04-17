@@ -2,6 +2,7 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended"
   ],
@@ -9,22 +10,36 @@
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true
-    }
+    "ecmaFeatures": { "jsx": true },
+    "project": "./tsconfig.json"
   },
   "plugins": ["@typescript-eslint", "react"],
   "rules": {
-    "react/react-in-jsx-scope": "off"
+    "react/react-in-jsx-scope": "off",
+
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/explicit-function-return-type": [
+      "warn",
+      { "allowExpressions": true, "allowTypedFunctionExpressions": true }
+    ],
+    "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "@typescript-eslint/prefer-readonly": "warn",
+    "@typescript-eslint/no-inferrable-types": "error",
+
+    "prefer-const": "error",
+    "no-var": "error",
+    "eqeqeq": ["error", "always"],
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "curly": ["error", "all"]
   },
   "settings": {
-    "react": {
-      "version": "detect"
-    }
+    "react": { "version": "detect" }
   },
   "env": {
     "browser": true,
     "es2022": true
   },
-  "ignorePatterns": ["*.astro", "src/env.d.ts", ".astro/**/*"]
+  "ignorePatterns": ["*.astro", "src/env.d.ts", ".astro/**/*", "src/**/__tests__/**/*", "vitest.config.ts"]
 }
