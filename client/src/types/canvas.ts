@@ -15,7 +15,7 @@ export interface Stroke {
 }
 
 export interface DrawingTool {
-  type: 'pen' | 'eraser' | 'highlighter' | 'lasso' | 'text';
+  type: 'pen' | 'eraser' | 'highlighter' | 'lasso' | 'text' | 'pan';
   color: string;
   width: number;
 }
@@ -37,6 +37,8 @@ export interface User {
   name: string;
   color: string;
   cursor?: Point;
+  permission?: UserPermission;
+  lassoPoints?: Point[];
 }
 
 export interface RemoteStrokeMessage {
@@ -121,11 +123,34 @@ export interface CanvasImage {
   timestamp: number;
 }
 
+export type UserPermission = 'editor' | 'viewer';
+
+export interface LayerComment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  timestamp: number;
+}
+
 export interface LayerData {
   userName: string;
+  /** Actual user who owns this layer (may differ from the layer's map key for extra layers). */
+  userId?: string;
   visible: boolean;
   strokes: Stroke[];
+  comments?: LayerComment[];
+  /** Display name — defaults to userName but can be customised ("Layer 2", etc.) */
+  name?: string;
 }
+
+export type UndoAction =
+  | { kind: 'add_stroke'; stroke: Stroke; layerId: string }
+  | { kind: 'erase'; originals: Array<{ layerId: string; stroke: Stroke }>; addedSubIds: string[] }
+  | { kind: 'clear'; strokesByLayer: Record<string, Stroke[]>; images: CanvasImage[]; texts: CanvasText[] }
+  | { kind: 'add_text'; text: CanvasText }
+  | { kind: 'add_image'; image: CanvasImage }
+  | { kind: 'move'; ids: string[]; dx: number; dy: number };
 
 export interface ActivityEvent {
   id: string;

@@ -11,8 +11,13 @@ import type { Point, Stroke, DrawingTool, LayerData } from '../types/canvas';
 export interface ToolMoveResult {
   /** Accumulated path points after this move step. */
   newPoints: Point[];
-  /** Stroke IDs newly intersected by the eraser on this step. */
+  /** Stroke IDs to remove wholesale (legacy eraser — no longer used for segment erasing). */
   newlyErasedIds?: string[];
+  /**
+   * Segment-erase result: for each original stroke that the eraser partially intersected,
+   * the original ID to remove and the remaining sub-strokes to add back.
+   */
+  erasedSegments?: Array<{ originalId: string; layerId: string; remaining: Stroke[] }>;
 }
 
 /**

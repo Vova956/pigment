@@ -1,4 +1,5 @@
 import type { Point, Stroke } from '../types/canvas';
+import { generateId } from '../types/canvas';
 
 /**
  * Stateless geometry utilities for the canvas.
@@ -87,6 +88,44 @@ export class GeometryService {
     if (!ctm) return null;
     const s = pt.matrixTransform(ctm.inverse());
     return { x: s.x, y: s.y };
+  }
+
+  /**
+   * Splits a stroke into sub-strokes by removing points that fall within
+   * `radius` of `eraserCenter`. Consecutive outside-points form new strokes.
+   * Returns an empty array if the entire stroke is within the eraser.
+   * Returns the original (unchanged) stroke in a one-element array if nothing is erased.
+   *
+   * Requires at least 2 remaining points to form a valid sub-stroke.
+   */
+  static splitStrokeAtEraser(stroke: Stroke, eraserCenter: Point, radius: number): Stroke[] {
+    const r2 = radius * radius;
+    const inside = stroke.points.map(
+      p => (p.x - eraserCenter.x) ** 2 + (p.y - eraserCenter.y) ** 2 < r2
+    );
+
+    // If nothing is erased, return unchanged
+    if (!inside.some(Boolean)) return [stroke];
+    // If everything is erased, return empty
+    if (inside.every(Boolean)) return [];
+
+    // Collect consecutive outside runs → sub-strokes
+    const subStrokes: Stroke[] = [];
+    let run: Point[] = [];
+    for (let i = 0; i < stroke.points.length; i++) {
+      if (!inside[i]) {
+        run.push(stroke.points[i]);
+      } else {
+        if (run.length >= 2) {
+          subStrokes.push({ ...stroke, id: generateId(), points: run, timestamp: Date.now() });
+        }
+        run = [];
+      }
+    }
+    if (run.length >= 2) {
+      subStrokes.push({ ...stroke, id: generateId(), points: run, timestamp: Date.now() });
+    }
+    return subStrokes;
   }
 
   /**
