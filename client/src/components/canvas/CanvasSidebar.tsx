@@ -1,4 +1,4 @@
-import type { User, LayerData } from '../../types/canvas';
+import type { User, LayerData, UserPermission } from '../../types/canvas';
 import { UserColorService } from '../../services/UserColorService';
 
 interface CanvasSidebarProps {
@@ -9,6 +9,7 @@ interface CanvasSidebarProps {
   layers: Record<string, LayerData>;
   totalStrokes: number;
   canvasTitle: string;
+  myPermission?: UserPermission;
 }
 
 export default function CanvasSidebar({
@@ -18,6 +19,7 @@ export default function CanvasSidebar({
   activeUsers,
   totalStrokes,
   canvasTitle,
+  myPermission,
 }: CanvasSidebarProps) {
   return (
     <aside className="sidebar">
@@ -32,7 +34,7 @@ export default function CanvasSidebar({
           <li className="canvas-item active">
             <span className="dot" style={{ background: '#e85d04' }} />
             {canvasTitle}
-            <span className="count">{totalStrokes}</span>
+            {totalStrokes > 0 && <span className="count">{totalStrokes}</span>}
           </li>
         </ul>
       </div>
@@ -46,7 +48,7 @@ export default function CanvasSidebar({
               <span className="status-dot status-online" />
             </div>
             <span className="user-name">{userName}</span>
-            <span className="user-role">You</span>
+            <span className="user-role">{myPermission === 'viewer' ? 'Viewer' : 'You'}</span>
           </li>
           {activeUsers.map(u => (
             <li key={u.id} className="user-item">
@@ -55,7 +57,7 @@ export default function CanvasSidebar({
                 <span className="status-dot status-online" />
               </div>
               <span className="user-name">{u.name}</span>
-              <span className="user-role">Editor</span>
+              <span className="user-role">{u.permission === 'viewer' ? 'Viewer' : 'Editor'}</span>
             </li>
           ))}
         </ul>

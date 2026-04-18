@@ -82,7 +82,7 @@ export default function HomePage({ onEnterSession, initialJoinCode }: HomePagePr
         body: JSON.stringify({ email: authEmail, password: authPassword }),
       });
       const data = await res.json();
-      if (!res.ok) { setAuthError(data.error || 'Login failed'); return; }
+      if (!res.ok) { setAuthError(friendlyAuthError(data.error)); return; }
       setLoggedInUser(data.user.username);
       if (thenJoinCode) {
         onEnterSession(thenJoinCode, data.user.username);
@@ -96,6 +96,16 @@ export default function HomePage({ onEnterSession, initialJoinCode }: HomePagePr
     }
   }
 
+  function friendlyAuthError(raw: string): string {
+    if (!raw) return 'An error occurred. Please try again.';
+    const lower = raw.toLowerCase();
+    if (lower.includes('unique') && lower.includes('username')) return 'That username is already taken. Please choose another.';
+    if (lower.includes('unique') && lower.includes('email')) return 'An account with that email already exists.';
+    if (lower.includes('missing fields')) return 'Please fill in all fields.';
+    if (lower.includes('invalid credentials')) return 'Incorrect email or password.';
+    return raw;
+  }
+
   async function handleRegister(thenJoinCode?: string) {
     setAuthLoading(true);
     setAuthError('');
@@ -106,7 +116,7 @@ export default function HomePage({ onEnterSession, initialJoinCode }: HomePagePr
         body: JSON.stringify({ username: authUsername, email: authEmail, password: authPassword }),
       });
       const data = await res.json();
-      if (!res.ok) { setAuthError(data.error || 'Registration failed'); return; }
+      if (!res.ok) { setAuthError(friendlyAuthError(data.error)); return; }
       const loginRes = await fetch(`${config.apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -319,9 +329,19 @@ export default function HomePage({ onEnterSession, initialJoinCode }: HomePagePr
               className="form-input code-input"
               type="text"
               placeholder="ABC123"
-              maxLength={6}
+              maxLength={200}
               value={joinCode}
-              onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setJoinError(''); }}
+              onChange={(e) => {
+                let val = e.target.value;
+                // Extract session code from a pasted share URL
+                try {
+                  const u = new URL(val.trim());
+                  const code = u.searchParams.get('session');
+                  if (code) val = code;
+                } catch { }
+                setJoinCode(val.toUpperCase().slice(0, 6));
+                setJoinError('');
+              }}
               onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
             />
             <button className="btn-secondary" onClick={() => handleJoin()} disabled={loading}>
