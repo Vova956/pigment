@@ -235,6 +235,33 @@ export default function CanvasDrawingSurface({
             </g>
           )}
 
+          {/* Remote user selections — ghost outline in that user's color */}
+          {activeUsers.map(u => {
+            const sel = u.selectedStrokeIds;
+            if (!sel?.length) return null;
+            const selSet = new Set(sel);
+            const strokesToOutline: Stroke[] = [];
+            for (const layer of Object.values(layers)) {
+              if (soloUserId ? layer.userId !== soloUserId : !layer.visible) continue;
+              for (const s of layer.strokes) if (selSet.has(s.id)) strokesToOutline.push(s);
+            }
+            if (!strokesToOutline.length) return null;
+            return (
+              <g key={`rselect-${u.id}`} data-export-exclude="true" style={{ pointerEvents: 'none' }}>
+                {strokesToOutline.map(s => (
+                  <path
+                    key={s.id}
+                    d={pointsToSvgPath(s.points)}
+                    stroke={u.color}
+                    strokeWidth={(s.width + 6) / zoom}
+                    strokeLinecap="round" strokeLinejoin="round"
+                    fill="none" opacity={0.3}
+                  />
+                ))}
+              </g>
+            );
+          })}
+
           {/* Remote user lasso previews */}
           {activeUsers.map(u => u.lassoPoints && u.lassoPoints.length > 1 && (
             <g key={`lasso-${u.id}`} data-export-exclude="true">

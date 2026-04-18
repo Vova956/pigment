@@ -39,6 +39,8 @@ export interface User {
   cursor?: Point;
   permission?: UserPermission;
   lassoPoints?: Point[];
+  /** Stroke IDs currently selected by this remote user (set via 'selection_update'). */
+  selectedStrokeIds?: string[];
 }
 
 export interface RemoteStrokeMessage {

@@ -170,6 +170,12 @@ export default function Canvas({
       wsRef.current.send(JSON.stringify(payload));
   }, [connected]);
 
+  /** Update local selection and notify peers so they can render a ghost outline. */
+  const setAndBroadcastSelection = useCallback((ids: Set<string>) => {
+    setSelectedIds(ids);
+    broadcast({ type: 'selection_update', userId, strokeIds: Array.from(ids) });
+  }, [broadcast, userId]);
+
   // ── Init own layer ────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -196,6 +202,29 @@ export default function Canvas({
       try {
         const msg = JSON.parse(event.data);
         switch (msg.type) {
+
+          case 'session_snapshot': {
+            const snap = msg.snapshot as {
+              layers: Record<string, LayerData>;
+              images: CanvasImage[];
+              texts: CanvasText[];
+            };
+            // Merge persisted layers with any locally pre-seeded ones (the
+            // current user's own layer was created before the snapshot arrived).
+            setLayers(prev => {
+              const merged: Record<string, LayerData> = { ...snap.layers };
+              for (const [lid, local] of Object.entries(prev)) {
+                const server = merged[lid];
+                merged[lid] = server
+                  ? { ...server, visible: local.visible, strokes: server.strokes }
+                  : local;
+              }
+              return merged;
+            });
+            setImages(snap.images ?? []);
+            setTexts(snap.texts ?? []);
+            break;
+          }
 
           case 'session_users':
             setActiveUsers(msg.users.map((u: { id: string; name: string }) => ({
@@ -239,6 +268,12 @@ export default function Canvas({
           case 'lasso_update':
             setActiveUsers(prev =>
               prev.map(u => u.id === msg.userId ? { ...u, lassoPoints: msg.points } : u)
+            );
+            break;
+
+          case 'selection_update':
+            setActiveUsers(prev =>
+              prev.map(u => u.id === msg.userId ? { ...u, selectedStrokeIds: msg.strokeIds } : u)
             );
             break;
 
@@ -449,7 +484,7 @@ export default function Canvas({
         }
       }
       // Clear selection and start new lasso
-      setSelectedIds(new Set());
+      setAndBroadcastSelection(new Set());
       setLassoPoints([pt]);
     } else {
       setCurrentStroke([pt]);
@@ -616,7 +651,7 @@ export default function Canvas({
       );
       const { lassoSelection } = toolHandler.onEnd(lasso, lassoLayers, userId, userName);
       if (!lassoSelection?.size) {
-        setSelectedIds(new Set());
+        setAndBroadcastSelection(new Set());
         return;
       }
       // Only keep IDs that actually live in the allowed layer slice (defensive)
@@ -624,7 +659,7 @@ export default function Canvas({
       for (const layer of Object.values(lassoLayers)) {
         for (const s of layer.strokes) allowedIds.add(s.id);
       }
-      setSelectedIds(new Set([...lassoSelection].filter(id => allowedIds.has(id))));
+      setAndBroadcastSelection(new Set([...lassoSelection].filter(id => allowedIds.has(id))));
       return;
     }
 
@@ -732,9 +767,9 @@ export default function Canvas({
     undoStackRef.current.push({ kind: 'erase', originals: found, addedSubIds: [] });
     removeStrokeIds(ids);
     broadcast({ type: 'strokes_erased', strokeIds: ids });
-    setSelectedIds(new Set());
+    setAndBroadcastSelection(new Set());
     setContextMenu(null);
-  }, [selectedIds, removeStrokeIds, broadcast, getStrokesByIds]);
+  }, [selectedIds, removeStrokeIds, broadcast, getStrokesByIds, setAndBroadcastSelection]);
 
   // ── Copy / Cut / Paste ────────────────────────────────────────────────────────
 
@@ -752,9 +787,9 @@ export default function Canvas({
     undoStackRef.current.push({ kind: 'erase', originals: found, addedSubIds: [] });
     removeStrokeIds(ids);
     broadcast({ type: 'strokes_erased', strokeIds: ids });
-    setSelectedIds(new Set());
+    setAndBroadcastSelection(new Set());
     setContextMenu(null);
-  }, [selectedIds, getStrokesByIds, removeStrokeIds, broadcast]);
+  }, [selectedIds, getStrokesByIds, removeStrokeIds, broadcast, setAndBroadcastSelection]);
 
   const pasteStrokes = useCallback(() => {
     if (!clipboardStrokes?.length) return;
@@ -781,9 +816,9 @@ export default function Canvas({
       broadcast({ type: 'stroke', stroke, layerId: lid });
     }
     // Select pasted strokes
-    setSelectedIds(new Set(newStrokes.map(s => s.id)));
+    setAndBroadcastSelection(new Set(newStrokes.map(s => s.id)));
     addActivity(userName[0].toUpperCase(), 'You', `pasted ${newStrokes.length} stroke${newStrokes.length !== 1 ? 's' : ''}`);
-  }, [clipboardStrokes, userId, userName, broadcast, addActivity]);
+  }, [clipboardStrokes, userId, userName, broadcast, addActivity, setAndBroadcastSelection]);
 
   // ── Undo ──────────────────────────────────────────────────────────────────────
 
@@ -997,7 +1032,7 @@ export default function Canvas({
 
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdsRef.current.size) deleteSelected();
 
-      if (e.key === 'Escape') { setSelectedIds(new Set()); setContextMenu(null); }
+      if (e.key === 'Escape') { setAndBroadcastSelection(new Set()); setContextMenu(null); }
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
 
@@ -1013,7 +1048,7 @@ export default function Canvas({
         if (type) {
           if (toolRef.current.type === 'text') commitPendingTextInline();
           setTool(prev => ({ ...prev, type }));
-          setSelectedIds(new Set());
+          setAndBroadcastSelection(new Set());
         }
       }
     };
@@ -1028,7 +1063,7 @@ export default function Canvas({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [deleteSelected, undo, commitPendingTextInline, copySelected, cutSelected, pasteStrokes]);
+  }, [deleteSelected, undo, commitPendingTextInline, copySelected, cutSelected, pasteStrokes, setAndBroadcastSelection]);
 
   // ── Global pointer-up ─────────────────────────────────────────────────────────
 
@@ -1166,7 +1201,7 @@ export default function Canvas({
           onToolChange={t => {
             if (tool.type === 'text') commitPendingTextInline();
             setTool(t);
-            setSelectedIds(new Set());
+            setAndBroadcastSelection(new Set());
           }}
           onUndo={undo}
           onClear={clearCanvas}
@@ -1273,7 +1308,7 @@ export default function Canvas({
               </svg>
               Delete {selectedIds.size} selected
             </button>
-            <button className="context-menu-item" onClick={() => setSelectedIds(new Set())}>
+            <button className="context-menu-item" onClick={() => setAndBroadcastSelection(new Set())}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>

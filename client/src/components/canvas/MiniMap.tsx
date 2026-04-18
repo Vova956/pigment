@@ -14,11 +14,21 @@ interface MiniMapProps {
 const MINI_W = 180;
 const MINI_H = 120;
 
-export default function MiniMap({ layers, images, zoom, pan, svgWidth, svgHeight }: MiniMapProps) {
+export default function MiniMap({ layers, images, texts, zoom, pan, svgWidth, svgHeight }: MiniMapProps) {
   if (!svgWidth || !svgHeight) return null;
 
-  // World coordinate range — estimate from all stroke points
-  let minX = 0, minY = 0, maxX = svgWidth, maxY = svgHeight;
+  // Viewport extent in world coords — always included so the red rect stays on-map
+  const vpX = pan.x;
+  const vpY = pan.y;
+  const vpW = svgWidth  / zoom;
+  const vpH = svgHeight / zoom;
+
+  // World coordinate range — seed with the original canvas rect AND the current viewport,
+  // then expand to cover all content (strokes, images, texts).
+  let minX = Math.min(0, vpX);
+  let minY = Math.min(0, vpY);
+  let maxX = Math.max(svgWidth,  vpX + vpW);
+  let maxY = Math.max(svgHeight, vpY + vpH);
   for (const layer of Object.values(layers)) {
     for (const stroke of layer.strokes) {
       for (const p of stroke.points) {
@@ -35,6 +45,14 @@ export default function MiniMap({ layers, images, zoom, pan, svgWidth, svgHeight
     maxX = Math.max(maxX, img.x + img.width);
     maxY = Math.max(maxY, img.y + img.height);
   }
+  for (const t of texts) {
+    // Estimate width so horizontally-long texts aren't clipped on the minimap
+    const estW = t.text.length * t.fontSize * 0.6;
+    minX = Math.min(minX, t.x);
+    minY = Math.min(minY, t.y);
+    maxX = Math.max(maxX, t.x + estW);
+    maxY = Math.max(maxY, t.y + t.fontSize);
+  }
 
   // Add some padding
   const pad = 20;
@@ -46,12 +64,6 @@ export default function MiniMap({ layers, images, zoom, pan, svgWidth, svgHeight
   const scaleX = MINI_W / worldW;
   const scaleY = MINI_H / worldH;
   const scale  = Math.min(scaleX, scaleY);
-
-  // Viewport rect in world coords
-  const vpX = pan.x;
-  const vpY = pan.y;
-  const vpW = svgWidth  / zoom;
-  const vpH = svgHeight / zoom;
 
   // Convert to minimap coords
   const toMX = (x: number) => (x - minX) * scale;
@@ -75,6 +87,15 @@ export default function MiniMap({ layers, images, zoom, pan, svgWidth, svgHeight
             x={toMX(img.x)} y={toMY(img.y)}
             width={img.width * scale} height={img.height * scale}
             fill="#cbd5e1" opacity={0.6}
+          />
+        ))}
+
+        {/* Texts — shown as small marker dots */}
+        {texts.map(t => (
+          <circle
+            key={t.id}
+            cx={toMX(t.x)} cy={toMY(t.y)}
+            r={1.5} fill={t.color} opacity={0.7}
           />
         ))}
 
