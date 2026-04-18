@@ -1,10 +1,27 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import type { DrawingTool } from '../types/canvas';
 
 const PALETTE_COLORS = [
   '#1a1a2e', '#e85d04', '#0d9488', '#7c3aed',
   '#e11d48', '#0284c7', '#d97706', '#ffffff',
 ];
+
+const CUSTOM_COLORS_KEY = 'pigment_custom_colors';
+const MAX_CUSTOM_COLORS = 8;
+
+function loadCustomColors(): string[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_COLORS_KEY);
+    if (raw) return JSON.parse(raw) as string[];
+  } catch {}
+  return [];
+}
+
+function saveCustomColors(colors: string[]) {
+  try {
+    localStorage.setItem(CUSTOM_COLORS_KEY, JSON.stringify(colors));
+  } catch {}
+}
 
 interface ToolbarProps {
   tool: DrawingTool;
@@ -17,10 +34,41 @@ interface ToolbarProps {
 }
 
 export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport, onImageUpload, disabled = false }: ToolbarProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const colorInputRef   = useRef<HTMLInputElement>(null);
+  const [customColors, setCustomColors] = useState<string[]>(loadCustomColors);
+
+  // Persist custom colors whenever they change
+  useEffect(() => {
+    saveCustomColors(customColors);
+  }, [customColors]);
+
+  // Cache a color if it's not already in the preset palette or custom list
+  const cacheCustomColor = useCallback((color: string) => {
+    if (!PALETTE_COLORS.includes(color)) {
+      setCustomColors(prev =>
+        prev.includes(color) ? prev : [color, ...prev].slice(0, MAX_CUSTOM_COLORS)
+      );
+    }
+  }, []);
+
+  // Attach a native "change" listener to the color input.
+  // React's onChange maps to the native "input" event which fires continuously
+  // while the user drags the color picker. The native "change" event fires only
+  // when the picker dialog is committed/closed — exactly when we want to cache.
+  useEffect(() => {
+    const el = colorInputRef.current;
+    if (!el) return;
+    const onNativeChange = (e: Event) => {
+      cacheCustomColor((e.target as HTMLInputElement).value);
+    };
+    el.addEventListener('change', onNativeChange);
+    return () => el.removeEventListener('change', onNativeChange);
+  }, [cacheCustomColor]);
 
   const setType = (type: DrawingTool['type']) => onToolChange({ ...tool, type });
   const setColor = (color: string) => onToolChange({ ...tool, color });
+
   const setWidth = (width: number) => onToolChange({ ...tool, width });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,7 +79,10 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
   };
 
   const dotSize = Math.min(Math.max(tool.width, 3), 22);
-  const noColor = tool.type === 'eraser' || tool.type === 'lasso';
+  const noColor = tool.type === 'eraser' || tool.type === 'lasso' || tool.type === 'pan';
+  /** Native color input: keep enabled for lasso so users can pick a color for the next tool */
+  const colorInputDisabled = disabled || tool.type === 'eraser' || tool.type === 'pan';
+  const noSize  = tool.type === 'lasso' || tool.type === 'pan';
   const sizeLabel = tool.type === 'text' ? 'Font' : 'Size';
 
   return (
@@ -41,9 +92,9 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
           className={`tool-btn${tool.type === 'pen' ? ' active' : ''}`}
           onClick={() => setType('pen')}
           disabled={disabled}
-          title="Pen"
+          title="Pen (P)"
         >
-          <span className="tooltip">Pen</span>
+          <span className="tooltip">Pen <kbd>P</kbd></span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
           </svg>
@@ -52,9 +103,9 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
           className={`tool-btn${tool.type === 'highlighter' ? ' active' : ''}`}
           onClick={() => setType('highlighter')}
           disabled={disabled}
-          title="Highlighter"
+          title="Highlighter (H)"
         >
-          <span className="tooltip">Highlighter</span>
+          <span className="tooltip">Highlighter <kbd>H</kbd></span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 19l7-7 3 3-7 7-3-3z"/>
             <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
@@ -65,9 +116,9 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
           className={`tool-btn${tool.type === 'eraser' ? ' active' : ''}`}
           onClick={() => setType('eraser')}
           disabled={disabled}
-          title="Eraser"
+          title="Eraser (E)"
         >
-          <span className="tooltip">Eraser</span>
+          <span className="tooltip">Eraser <kbd>E</kbd></span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M20 20H7L3 16l10-10 7 7-4 4"/>
             <path d="M7 20l3-3"/>
@@ -77,9 +128,9 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
           className={`tool-btn${tool.type === 'lasso' ? ' active' : ''}`}
           onClick={() => setType('lasso')}
           disabled={disabled}
-          title="Lasso Select"
+          title="Lasso Select (L)"
         >
-          <span className="tooltip">Lasso Select</span>
+          <span className="tooltip">Lasso <kbd>L</kbd></span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 2">
             <ellipse cx="12" cy="11" rx="9" ry="7"/>
             <line x1="12" y1="18" x2="12" y2="22" strokeDasharray="none"/>
@@ -90,13 +141,29 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
           className={`tool-btn${tool.type === 'text' ? ' active' : ''}`}
           onClick={() => setType('text')}
           disabled={disabled}
-          title="Text"
+          title="Text (T)"
         >
-          <span className="tooltip">Text</span>
+          <span className="tooltip">Text <kbd>T</kbd></span>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="4 7 4 4 20 4 20 7"/>
             <line x1="9" y1="20" x2="15" y2="20"/>
             <line x1="12" y1="4" x2="12" y2="20"/>
+          </svg>
+        </button>
+        <button
+          className={`tool-btn${tool.type === 'pan' ? ' active' : ''}`}
+          onClick={() => setType('pan')}
+          disabled={disabled}
+          title="Pan / Move canvas (V) — also: hold Space or middle-mouse drag"
+        >
+          <span className="tooltip">Pan <kbd>V</kbd></span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M5 9l-3 3 3 3"/>
+            <path d="M9 5l3-3 3 3"/>
+            <path d="M15 19l-3 3-3-3"/>
+            <path d="M19 9l3 3-3 3"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <line x1="12" y1="2" x2="12" y2="22"/>
           </svg>
         </button>
       </div>
@@ -118,21 +185,38 @@ export default function Toolbar({ tool, onToolChange, onUndo, onClear, onExport,
             title={color}
           />
         ))}
-        <div className="color-custom" title="Custom color">
+        <div className="color-custom" title="Custom color — close picker to save">
+          <div className="color-custom-preview" style={{ background: tool.color }} aria-hidden />
           <input
+            ref={colorInputRef}
             type="color"
             value={tool.color}
             onChange={(e) => setColor(e.target.value)}
-            disabled={disabled || noColor}
+            disabled={colorInputDisabled}
           />
-          <div className="color-custom-preview" style={{ background: tool.color }} />
         </div>
+        {/* Saved custom colors */}
+        {customColors.length > 0 && (
+          <>
+            <div className="toolbar-separator toolbar-separator--vertical" />
+            {customColors.map((color) => (
+              <button
+                key={color}
+                className={`color-swatch color-swatch--custom${tool.color === color ? ' active' : ''}`}
+                onClick={() => setColor(color)}
+                disabled={disabled || noColor}
+                style={{ backgroundColor: color }}
+                title={`Saved: ${color}`}
+              />
+            ))}
+          </>
+        )}
       </div>
 
       <div className="toolbar-separator" />
 
-      {/* Brush / eraser size (hidden for lasso) */}
-      {tool.type !== 'lasso' && (
+      {/* Brush / eraser size (hidden for lasso and pan) */}
+      {!noSize && (
         <div className="size-control">
           <span className="size-control-label">{sizeLabel}</span>
           <div className="size-preview">
