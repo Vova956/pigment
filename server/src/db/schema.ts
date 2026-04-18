@@ -18,5 +18,15 @@ export async function createTables() {
       name TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Persisted canvas state. Stored as JSON blobs per session so the
+    -- schema survives client-side type changes (strokes, images, texts, layers).
+    CREATE TABLE IF NOT EXISTS session_state (
+      session_id TEXT PRIMARY KEY,
+      -- JSON: { layers: Record<string, LayerData>, images: CanvasImage[], texts: CanvasText[] }
+      snapshot TEXT NOT NULL,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    );
   `);
 }

@@ -4,7 +4,17 @@
  */
 export class CanvasExporter {
   exportToPng(svg: SVGSVGElement): void {
-    const str = new XMLSerializer().serializeToString(svg);
+    // Clone the live SVG so we can strip UI-only elements without touching the DOM
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+
+    // Remove any elements tagged as export-excluded (cursors, lasso preview, etc.)
+    clone.querySelectorAll('[data-export-exclude="true"]').forEach(el => el.remove());
+
+    // Ensure the clone has explicit pixel dimensions for canvas rendering
+    clone.setAttribute('width', String(svg.clientWidth));
+    clone.setAttribute('height', String(svg.clientHeight));
+
+    const str = new XMLSerializer().serializeToString(clone);
     const blob = new Blob([str], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
 

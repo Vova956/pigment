@@ -4,6 +4,7 @@ import { HighlighterToolHandler } from './HighlighterToolHandler';
 import { EraserToolHandler } from './EraserToolHandler';
 import { LassoToolHandler } from './LassoToolHandler';
 import { TextToolHandler } from './TextToolHandler';
+import { PanToolHandler } from './PanToolHandler';
 import type { DrawingTool } from '../types/canvas';
 
 /**
@@ -55,6 +56,7 @@ export class ToolHandlerFactory {
       case 'eraser':      return new EraserToolHandler(tool);
       case 'lasso':       return new LassoToolHandler(tool);
       case 'text':        return new TextToolHandler(tool);
+      case 'pan':         return new PanToolHandler(tool);
     }
   }
 }

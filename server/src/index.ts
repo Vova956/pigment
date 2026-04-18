@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes";
 import sessionRoutes from "./routes/session.routes";
 import { initDB } from "./db/database";
 import { createTables } from "./db/schema";
+import { applyMessage, loadSnapshot, flushAll } from "./db/session-state";
 
 // sessionId → set of clients in that room
 const sessionRooms = new Map<string, Set<WebSocket>>();
@@ -32,7 +33,7 @@ function setupWebSocketServer() {
   wss.on("connection", (ws: WebSocket) => {
     console.log("Client connected");
 
-    ws.on("message", (message: Buffer) => {
+    ws.on("message", async (message: Buffer) => {
       try {
         const data = JSON.parse(message.toString());
 
@@ -53,6 +54,11 @@ function setupWebSocketServer() {
           clientSessions.set(ws, sessionId);
           clientUsers.set(ws, user);
 
+          // Replay persisted canvas state so the joiner sees prior work,
+          // even if they're the first one back after everyone left.
+          const snapshot = await loadSnapshot(sessionId);
+          ws.send(JSON.stringify({ type: "session_snapshot", snapshot }));
+
           // Send the new user the list of everyone already in the session
           const existingUsers: { id: string; name: string }[] = [];
           sessionRooms.get(sessionId)!.forEach((client) => {
@@ -72,7 +78,10 @@ function setupWebSocketServer() {
           // only to clients in the same session
           const sessionId = clientSessions.get(ws);
           if (sessionId) {
-            broadcastToSession(ws, sessionId, JSON.parse(message.toString()));
+            // Persist mutating messages before fan-out so late joiners get
+            // the same canvas as current collaborators.
+            await applyMessage(sessionId, data);
+            broadcastToSession(ws, sessionId, data);
           }
         }
       } catch (err) {
@@ -130,6 +139,14 @@ async function start() {
     setupWebSocketServer();
     setupApiServer();
     console.log(`WebSocket server running on ws://${config.host}:${config.wsPort}`);
+
+    const shutdown = async (signal: string) => {
+      console.log(`Received ${signal}, flushing session state…`);
+      await flushAll();
+      process.exit(0);
+    };
+    process.on("SIGINT", () => void shutdown("SIGINT"));
+    process.on("SIGTERM", () => void shutdown("SIGTERM"));
   } catch (err) {
     console.error("Failed to start server:", err);
     process.exit(1);
