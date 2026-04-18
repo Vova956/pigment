@@ -61,7 +61,7 @@ describe('POST /sessions', () => {
     expect(mockDb.run).toHaveBeenCalledWith(
       'INSERT INTO sessions (id, name) VALUES (?, ?)',
       expect.any(String),
-      'Art Class',
+      'Art Class'
     );
   });
 
@@ -109,9 +109,6 @@ describe('GET /sessions/:id', () => {
 
     await request(buildApp()).get('/sessions/abc123');
 
-    expect(mockDb.get).toHaveBeenCalledWith(
-      expect.any(String),
-      'ABC123',
-    );
+    expect(mockDb.get).toHaveBeenCalledWith(expect.any(String), 'ABC123');
   });
 });

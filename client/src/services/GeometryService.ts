@@ -44,9 +44,11 @@ export class GeometryService {
   static pointInPolygon(pt: Point, poly: Point[]): boolean {
     let inside = false;
     for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const xi = poly[i].x, yi = poly[i].y;
-      const xj = poly[j].x, yj = poly[j].y;
-      if ((yi > pt.y) !== (yj > pt.y) && pt.x < ((xj - xi) * (pt.y - yi)) / (yj - yi) + xi) {
+      const xi = poly[i].x,
+        yi = poly[i].y;
+      const xj = poly[j].x,
+        yj = poly[j].y;
+      if (yi > pt.y !== yj > pt.y && pt.x < ((xj - xi) * (pt.y - yi)) / (yj - yi) + xi) {
         inside = !inside;
       }
     }
@@ -71,21 +73,22 @@ export class GeometryService {
    * @returns The SVG-space point, or `null` if the transform is unavailable
    *          or the touch list is empty.
    */
-  static getSvgCoords(
-    e: React.MouseEvent | React.TouchEvent,
-    svg: SVGSVGElement,
-  ): Point | null {
+  static getSvgCoords(e: React.MouseEvent | React.TouchEvent, svg: SVGSVGElement): Point | null {
     const pt = svg.createSVGPoint();
     if ('touches' in e) {
-      if (!e.touches.length) return null;
+      if (!e.touches.length) {
+        return null;
+      }
       pt.x = e.touches[0].clientX;
       pt.y = e.touches[0].clientY;
     } else {
-      pt.x = (e as React.MouseEvent).clientX;
-      pt.y = (e as React.MouseEvent).clientY;
+      pt.x = e.clientX;
+      pt.y = e.clientY;
     }
     const ctm = svg.getScreenCTM();
-    if (!ctm) return null;
+    if (!ctm) {
+      return null;
+    }
     const s = pt.matrixTransform(ctm.inverse());
     return { x: s.x, y: s.y };
   }
@@ -101,13 +104,17 @@ export class GeometryService {
   static splitStrokeAtEraser(stroke: Stroke, eraserCenter: Point, radius: number): Stroke[] {
     const r2 = radius * radius;
     const inside = stroke.points.map(
-      p => (p.x - eraserCenter.x) ** 2 + (p.y - eraserCenter.y) ** 2 < r2
+      (p) => (p.x - eraserCenter.x) ** 2 + (p.y - eraserCenter.y) ** 2 < r2
     );
 
     // If nothing is erased, return unchanged
-    if (!inside.some(Boolean)) return [stroke];
+    if (!inside.some(Boolean)) {
+      return [stroke];
+    }
     // If everything is erased, return empty
-    if (inside.every(Boolean)) return [];
+    if (inside.every(Boolean)) {
+      return [];
+    }
 
     // Collect consecutive outside runs → sub-strokes
     const subStrokes: Stroke[] = [];
@@ -136,6 +143,6 @@ export class GeometryService {
     if ('touches' in e) {
       return { x: e.touches[0]?.clientX ?? 0, y: e.touches[0]?.clientY ?? 0 };
     }
-    return { x: (e as React.MouseEvent).clientX, y: (e as React.MouseEvent).clientY };
+    return { x: e.clientX, y: e.clientY };
   }
 }

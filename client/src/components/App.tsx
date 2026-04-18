@@ -29,22 +29,13 @@ export default function App() {
   }
 
   // Still reading URL params
-  if (sessionId === null) return null;
-
-  if (!sessionId) {
-    return (
-      <HomePage
-        onEnterSession={handleEnterSession}
-        initialJoinCode={pendingCode}
-      />
-    );
+  if (sessionId === null) {
+    return null;
   }
 
-  return (
-    <Canvas
-      userId={userId}
-      userName={userName}
-      sessionId={sessionId}
-    />
-  );
+  if (!sessionId) {
+    return <HomePage onEnterSession={handleEnterSession} initialJoinCode={pendingCode} />;
+  }
+
+  return <Canvas userId={userId} userName={userName} sessionId={sessionId} />;
 }

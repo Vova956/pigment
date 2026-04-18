@@ -61,8 +61,12 @@ describe('ClipboardService.copyText — modern clipboard API', () => {
     const execCommand = vi.fn().mockReturnValue(true);
     document.execCommand = execCommand;
 
-    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
-    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+    const appendChildSpy = vi
+      .spyOn(document.body, 'appendChild')
+      .mockImplementation((node) => node);
+    const removeChildSpy = vi
+      .spyOn(document.body, 'removeChild')
+      .mockImplementation((node) => node);
 
     await new Promise<void>((resolve) => {
       service.copyText('fallback text', resolve);
@@ -87,8 +91,12 @@ describe('ClipboardService.copyText — execCommand fallback', () => {
 
   it('uses execCommand when navigator.clipboard is unavailable', () => {
     const onSuccess = vi.fn();
-    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
-    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+    const appendChildSpy = vi
+      .spyOn(document.body, 'appendChild')
+      .mockImplementation((node) => node);
+    const removeChildSpy = vi
+      .spyOn(document.body, 'removeChild')
+      .mockImplementation((node) => node);
 
     service.copyText('no clipboard api', onSuccess);
 

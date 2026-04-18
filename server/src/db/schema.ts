@@ -1,5 +1,5 @@
 // src/db/schema.ts
-import { getDB } from "./database";
+import { getDB } from './database';
 
 export async function createTables() {
   const db = getDB();

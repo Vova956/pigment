@@ -132,7 +132,7 @@ export abstract class DrawingToolHandler {
     pt: Point,
     currentPoints: Point[],
     _layers: Record<string, LayerData>,
-    _erasedThisGesture: ReadonlySet<string>,
+    _erasedThisGesture: ReadonlySet<string>
   ): ToolMoveResult {
     return { newPoints: [...currentPoints, pt] };
   }
@@ -151,7 +151,7 @@ export abstract class DrawingToolHandler {
     _points: Point[],
     _layers: Record<string, LayerData>,
     _userId: string,
-    _userName: string,
+    _userName: string
   ): ToolEndResult {
     return {};
   }

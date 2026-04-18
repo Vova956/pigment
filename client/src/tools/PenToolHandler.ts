@@ -3,11 +3,22 @@ import type { Point, LayerData } from '../types/canvas';
 import { generateId } from '../types/canvas';
 
 export class PenToolHandler extends DrawingToolHandler {
-  get cursor(): string { return 'default'; }
-  get hasStrokePreview(): boolean { return true; }
+  get cursor(): string {
+    return 'default';
+  }
+  get hasStrokePreview(): boolean {
+    return true;
+  }
 
-  onEnd(points: Point[], _layers: Record<string, LayerData>, userId: string, userName: string): ToolEndResult {
-    if (!points.length) return {};
+  onEnd(
+    points: Point[],
+    _layers: Record<string, LayerData>,
+    userId: string,
+    userName: string
+  ): ToolEndResult {
+    if (!points.length) {
+      return {};
+    }
     return {
       stroke: {
         id: generateId(),

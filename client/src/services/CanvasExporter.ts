@@ -8,7 +8,7 @@ export class CanvasExporter {
     const clone = svg.cloneNode(true) as SVGSVGElement;
 
     // Remove any elements tagged as export-excluded (cursors, lasso preview, etc.)
-    clone.querySelectorAll('[data-export-exclude="true"]').forEach(el => el.remove());
+    clone.querySelectorAll('[data-export-exclude="true"]').forEach((el) => el.remove());
 
     // Ensure the clone has explicit pixel dimensions for canvas rendering
     clone.setAttribute('width', String(svg.clientWidth));

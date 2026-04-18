@@ -1,4 +1,4 @@
-import { DrawingToolHandler } from './DrawingToolHandler';
+import type { DrawingToolHandler } from './DrawingToolHandler';
 import { PenToolHandler } from './PenToolHandler';
 import { HighlighterToolHandler } from './HighlighterToolHandler';
 import { EraserToolHandler } from './EraserToolHandler';
@@ -51,12 +51,18 @@ export class ToolHandlerFactory {
    */
   static create(tool: DrawingTool): DrawingToolHandler {
     switch (tool.type) {
-      case 'pen':         return new PenToolHandler(tool);
-      case 'highlighter': return new HighlighterToolHandler(tool);
-      case 'eraser':      return new EraserToolHandler(tool);
-      case 'lasso':       return new LassoToolHandler(tool);
-      case 'text':        return new TextToolHandler(tool);
-      case 'pan':         return new PanToolHandler(tool);
+      case 'pen':
+        return new PenToolHandler(tool);
+      case 'highlighter':
+        return new HighlighterToolHandler(tool);
+      case 'eraser':
+        return new EraserToolHandler(tool);
+      case 'lasso':
+        return new LassoToolHandler(tool);
+      case 'text':
+        return new TextToolHandler(tool);
+      case 'pan':
+        return new PanToolHandler(tool);
     }
   }
 }

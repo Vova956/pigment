@@ -7,8 +7,18 @@ import CanvasRightPanel from './canvas/CanvasRightPanel';
 import ShareModal from './canvas/ShareModal';
 
 import type {
-  Point, DrawingTool, Stroke, User, LayerData, ActivityEvent, ChatMessage,
-  CanvasImage, CanvasText, UndoAction, LayerComment, UserPermission,
+  Point,
+  DrawingTool,
+  Stroke,
+  User,
+  LayerData,
+  ActivityEvent,
+  ChatMessage,
+  CanvasImage,
+  CanvasText,
+  UndoAction,
+  LayerComment,
+  UserPermission,
 } from '../types/canvas';
 import { generateId } from '../types/canvas';
 
@@ -29,7 +39,7 @@ interface CanvasProps {
 
 // ── Singletons ────────────────────────────────────────────────────────────────
 
-const exporter  = new CanvasExporter();
+const exporter = new CanvasExporter();
 const clipboard = new ClipboardService();
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -39,12 +49,11 @@ export default function Canvas({
   userName = 'Anonymous',
   sessionId = 'default',
 }: CanvasProps) {
-
   // ── Connection ──────────────────────────────────────────────────────────────
   const [connected, setConnected] = useState(false);
 
   // ── Layers ──────────────────────────────────────────────────────────────────
-  const [layers, setLayers]         = useState<Record<string, LayerData>>({});
+  const [layers, setLayers] = useState<Record<string, LayerData>>({});
   const [soloUserId, setSoloUserId] = useState<string | null>(null);
   /**
    * The layer key that strokes from the current user are added to.
@@ -53,43 +62,56 @@ export default function Canvas({
   const ALL_LAYERS_SENTINEL = '__all__';
   const [activeLayerId, setActiveLayerId] = useState<string>(ALL_LAYERS_SENTINEL);
   const layersRef = useRef<Record<string, LayerData>>({});
-  useEffect(() => { layersRef.current = layers; }, [layers]);
+  useEffect(() => {
+    layersRef.current = layers;
+  }, [layers]);
 
   // ── Active users + permissions ───────────────────────────────────────────────
-  const [activeUsers, setActiveUsers]     = useState<User[]>([]);
-  const [myPermission, setMyPermission]   = useState<UserPermission>('editor');
+  const [activeUsers, setActiveUsers] = useState<User[]>([]);
+  const [myPermission, setMyPermission] = useState<UserPermission>('editor');
 
   // ── Undo stack ───────────────────────────────────────────────────────────────
   const undoStackRef = useRef<UndoAction[]>([]);
 
   // ── Drawing state ────────────────────────────────────────────────────────────
-  const [isDrawing, setIsDrawing]           = useState(false);
-  const [currentStroke, setCurrentStroke]   = useState<Point[]>([]);
-  const [tool, setTool]                     = useState<DrawingTool>({ type: 'pen', color: '#1a1a2e', width: 3 });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
+  const [tool, setTool] = useState<DrawingTool>({ type: 'pen', color: '#1a1a2e', width: 3 });
 
   // ── Zoom / pan ───────────────────────────────────────────────────────────────
   const [zoom, setZoom] = useState(1);
-  const [pan, setPan]   = useState<Point>({ x: 0, y: 0 });
-  const isPanningRef    = useRef(false);
-  const panStartRef     = useRef<{ mouseX: number; mouseY: number; panX: number; panY: number } | null>(null);
+  const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef<{ mouseX: number; mouseY: number; panX: number; panY: number } | null>(
+    null
+  );
 
   // ── Images ───────────────────────────────────────────────────────────────────
   const [images, setImages] = useState<CanvasImage[]>([]);
   const imagesRef = useRef<CanvasImage[]>([]);
-  useEffect(() => { imagesRef.current = images; }, [images]);
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
   const draggingImageRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
 
   // ── Texts ────────────────────────────────────────────────────────────────────
-  const [texts, setTexts]           = useState<CanvasText[]>([]);
-  const [pendingText, setPendingText] = useState<{ svgX: number; svgY: number; clientX: number; clientY: number } | null>(null);
-  const [textInput, setTextInput]   = useState('');
+  const [texts, setTexts] = useState<CanvasText[]>([]);
+  const [pendingText, setPendingText] = useState<{
+    svgX: number;
+    svgY: number;
+    clientX: number;
+    clientY: number;
+  } | null>(null);
+  const [textInput, setTextInput] = useState('');
 
   // ── Lasso ────────────────────────────────────────────────────────────────────
-  const [lassoPoints, setLassoPoints]             = useState<Point[]>([]);
-  const [selectedIds, setSelectedIds]             = useState<Set<string>>(new Set());
-  const isDraggingSelectionRef                    = useRef(false);
-  const selectionDragStartRef                     = useRef<Point | null>(null);
-  const [selectionDragOffset, setSelectionDragOffset] = useState<{ dx: number; dy: number } | null>(null);
+  const [lassoPoints, setLassoPoints] = useState<Point[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const isDraggingSelectionRef = useRef(false);
+  const selectionDragStartRef = useRef<Point | null>(null);
+  const [selectionDragOffset, setSelectionDragOffset] = useState<{ dx: number; dy: number } | null>(
+    null
+  );
 
   // ── Clipboard ────────────────────────────────────────────────────────────────
   const [clipboardStrokes, setClipboardStrokes] = useState<Stroke[] | null>(null);
@@ -98,40 +120,44 @@ export default function Canvas({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   // ── Hover attribution ────────────────────────────────────────────────────────
-  const [hoverInfo, setHoverInfo] = useState<{ userName: string; x: number; y: number } | null>(null);
+  const [hoverInfo, setHoverInfo] = useState<{ userName: string; x: number; y: number } | null>(
+    null
+  );
 
   // ── UI state ─────────────────────────────────────────────────────────────────
-  const [activePanel, setActivePanel]       = useState<'layers' | 'activity' | 'chat'>('layers');
+  const [activePanel, setActivePanel] = useState<'layers' | 'activity' | 'chat'>('layers');
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [cursorPos, setCursorPos]           = useState<Point | null>(null);
-  const [copySuccess, setCopySuccess]       = useState(false);
-  const [activityLog, setActivityLog]       = useState<ActivityEvent[]>([]);
-  const [chatMessages, setChatMessages]     = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput]           = useState('');
+  const [cursorPos, setCursorPos] = useState<Point | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityEvent[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
 
   // ── Space-hold for temporary pan ─────────────────────────────────────────────
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
 
   // ── Refs ─────────────────────────────────────────────────────────────────────
-  const svgRef             = useRef<SVGSVGElement>(null);
-  const wsRef              = useRef<WebSocket | null>(null);
-  const currentStrokeRef   = useRef<Point[]>([]);
-  const erasedThisGesture  = useRef<Set<string>>(new Set());
+  const svgRef = useRef<SVGSVGElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const currentStrokeRef = useRef<Point[]>([]);
+  const erasedThisGesture = useRef<Set<string>>(new Set());
   /** Stores full stroke objects by ID as they are erased, BEFORE removal, for undo. */
-  const erasedStrokesRef   = useRef<Map<string, { layerId: string; stroke: Stroke }>>(new Map());
-  const selectedIdsRef     = useRef<Set<string>>(new Set());
-  useEffect(() => { selectedIdsRef.current = selectedIds; }, [selectedIds]);
+  const erasedStrokesRef = useRef<Map<string, { layerId: string; stroke: Stroke }>>(new Map());
+  const selectedIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    selectedIdsRef.current = selectedIds;
+  }, [selectedIds]);
 
   // Always-current refs so callbacks don't need extra deps
-  const panRef          = useRef(pan);
-  const pendingTextRef  = useRef(pendingText);
-  const textInputRef    = useRef(textInput);
-  const toolRef         = useRef(tool);
+  const panRef = useRef(pan);
+  const pendingTextRef = useRef(pendingText);
+  const textInputRef = useRef(textInput);
+  const toolRef = useRef(tool);
   const activeLayerIdRef = useRef(activeLayerId);
-  panRef.current          = pan;
-  pendingTextRef.current  = pendingText;
-  textInputRef.current    = textInput;
-  toolRef.current         = tool;
+  panRef.current = pan;
+  pendingTextRef.current = pendingText;
+  textInputRef.current = textInput;
+  toolRef.current = tool;
   activeLayerIdRef.current = activeLayerId;
 
   // ── Tool handler ──────────────────────────────────────────────────────────────
@@ -140,15 +166,16 @@ export default function Canvas({
   // ── Helpers ───────────────────────────────────────────────────────────────────
 
   const addActivity = useCallback((avatar: string, name: string, action: string) => {
-    setActivityLog(log => [...log, { id: generateId(), avatar, name, action, time: new Date() }]);
+    setActivityLog((log) => [...log, { id: generateId(), avatar, name, action, time: new Date() }]);
   }, []);
 
   const removeStrokeIds = useCallback((ids: string[]) => {
     const set = new Set(ids);
-    setLayers(prev => {
+    setLayers((prev) => {
       const next: Record<string, LayerData> = {};
-      for (const [lid, layer] of Object.entries(prev))
-        next[lid] = { ...layer, strokes: layer.strokes.filter(s => !set.has(s.id)) };
+      for (const [lid, layer] of Object.entries(prev)) {
+        next[lid] = { ...layer, strokes: layer.strokes.filter((s) => !set.has(s.id)) };
+      }
       return next;
     });
   }, []);
@@ -159,29 +186,44 @@ export default function Canvas({
     const found: Array<{ layerId: string; stroke: Stroke }> = [];
     for (const [layerId, layer] of Object.entries(layersRef.current)) {
       for (const stroke of layer.strokes) {
-        if (set.has(stroke.id)) found.push({ layerId, stroke });
+        if (set.has(stroke.id)) {
+          found.push({ layerId, stroke });
+        }
       }
     }
     return found;
   }, []);
 
-  const broadcast = useCallback((payload: object) => {
-    if (connected && wsRef.current?.readyState === WebSocket.OPEN)
-      wsRef.current.send(JSON.stringify(payload));
-  }, [connected]);
+  const broadcast = useCallback(
+    (payload: object) => {
+      if (connected && wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify(payload));
+      }
+    },
+    [connected]
+  );
 
   /** Update local selection and notify peers so they can render a ghost outline. */
-  const setAndBroadcastSelection = useCallback((ids: Set<string>) => {
-    setSelectedIds(ids);
-    broadcast({ type: 'selection_update', userId, strokeIds: Array.from(ids) });
-  }, [broadcast, userId]);
+  const setAndBroadcastSelection = useCallback(
+    (ids: Set<string>) => {
+      setSelectedIds(ids);
+      broadcast({ type: 'selection_update', userId, strokeIds: Array.from(ids) });
+    },
+    [broadcast, userId]
+  );
 
   // ── Init own layer ────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    setLayers(prev => ({
+    setLayers((prev) => ({
       ...prev,
-      [userId]: { userName, userId, visible: true, strokes: prev[userId]?.strokes ?? [], comments: prev[userId]?.comments ?? [] },
+      [userId]: {
+        userName,
+        userId,
+        visible: true,
+        strokes: prev[userId]?.strokes ?? [],
+        comments: prev[userId]?.comments ?? [],
+      },
     }));
   }, [userId, userName]);
 
@@ -193,16 +235,17 @@ export default function Canvas({
 
     socket.onopen = () => {
       setConnected(true);
-      socket.send(JSON.stringify({ type: 'join_session', sessionId, user: { id: userId, name: userName } }));
+      socket.send(
+        JSON.stringify({ type: 'join_session', sessionId, user: { id: userId, name: userName } })
+      );
     };
     socket.onclose = () => setConnected(false);
-    socket.onerror = err => console.error('WS error:', err);
+    socket.onerror = (err) => console.error('WS error:', err);
 
-    socket.onmessage = event => {
+    socket.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
         switch (msg.type) {
-
           case 'session_snapshot': {
             const snap = msg.snapshot as {
               layers: Record<string, LayerData>;
@@ -211,7 +254,7 @@ export default function Canvas({
             };
             // Merge persisted layers with any locally pre-seeded ones (the
             // current user's own layer was created before the snapshot arrived).
-            setLayers(prev => {
+            setLayers((prev) => {
               const merged: Record<string, LayerData> = { ...snap.layers };
               for (const [lid, local] of Object.entries(prev)) {
                 const server = merged[lid];
@@ -227,67 +270,99 @@ export default function Canvas({
           }
 
           case 'session_users':
-            setActiveUsers(msg.users.map((u: { id: string; name: string }) => ({
-              ...u, color: UserColorService.getColor(u.id),
-            })));
-            setLayers(prev => {
+            setActiveUsers(
+              msg.users.map((u: { id: string; name: string }) => ({
+                ...u,
+                color: UserColorService.getColor(u.id),
+              }))
+            );
+            setLayers((prev) => {
               const next = { ...prev };
               msg.users.forEach((u: { id: string; name: string }) => {
-                if (!next[u.id]) next[u.id] = { userName: u.name, userId: u.id, visible: true, strokes: [], comments: [] };
+                if (!next[u.id]) {
+                  next[u.id] = {
+                    userName: u.name,
+                    userId: u.id,
+                    visible: true,
+                    strokes: [],
+                    comments: [],
+                  };
+                }
               });
               return next;
             });
             break;
 
           case 'user_joined':
-            setActiveUsers(prev => {
-              if (prev.find(u => u.id === msg.user.id)) return prev;
+            setActiveUsers((prev) => {
+              if (prev.find((u) => u.id === msg.user.id)) {
+                return prev;
+              }
               return [...prev, { ...msg.user, color: UserColorService.getColor(msg.user.id) }];
             });
-            setLayers(prev => ({
+            setLayers((prev) => ({
               ...prev,
-              [msg.user.id]: prev[msg.user.id] ?? { userName: msg.user.name, userId: msg.user.id, visible: true, strokes: [], comments: [] },
+              [msg.user.id]: prev[msg.user.id] ?? {
+                userName: msg.user.name,
+                userId: msg.user.id,
+                visible: true,
+                strokes: [],
+                comments: [],
+              },
             }));
             addActivity(msg.user.name[0].toUpperCase(), msg.user.name, 'joined the session');
             break;
 
           case 'user_left':
-            setActiveUsers(prev => {
-              const u = prev.find(u => u.id === msg.userId);
-              if (u) addActivity(u.name[0].toUpperCase(), u.name, 'left the session');
-              return prev.filter(u => u.id !== msg.userId);
+            setActiveUsers((prev) => {
+              const u = prev.find((u) => u.id === msg.userId);
+              if (u) {
+                addActivity(u.name[0].toUpperCase(), u.name, 'left the session');
+              }
+              return prev.filter((u) => u.id !== msg.userId);
             });
             break;
 
           case 'cursor_update':
-            setActiveUsers(prev =>
-              prev.map(u => u.id === msg.userId ? { ...u, cursor: msg.cursor } : u)
+            setActiveUsers((prev) =>
+              prev.map((u) => (u.id === msg.userId ? { ...u, cursor: msg.cursor } : u))
             );
             break;
 
           case 'lasso_update':
-            setActiveUsers(prev =>
-              prev.map(u => u.id === msg.userId ? { ...u, lassoPoints: msg.points } : u)
+            setActiveUsers((prev) =>
+              prev.map((u) => (u.id === msg.userId ? { ...u, lassoPoints: msg.points } : u))
             );
             break;
 
           case 'selection_update':
-            setActiveUsers(prev =>
-              prev.map(u => u.id === msg.userId ? { ...u, selectedStrokeIds: msg.strokeIds } : u)
+            setActiveUsers((prev) =>
+              prev.map((u) =>
+                u.id === msg.userId ? { ...u, selectedStrokeIds: msg.strokeIds } : u
+              )
             );
             break;
 
           case 'stroke': {
             // msg.layerId is the specific layer key; fall back to stroke.userId for legacy messages
             const targetLayerId = msg.layerId ?? msg.stroke.userId;
-            setLayers(prev => {
-              const existing = prev[targetLayerId] ?? { userName: msg.stroke.userName, userId: msg.stroke.userId, visible: true, strokes: [], comments: [] };
-              return { ...prev, [targetLayerId]: { ...existing, strokes: [...existing.strokes, msg.stroke] } };
+            setLayers((prev) => {
+              const existing = prev[targetLayerId] ?? {
+                userName: msg.stroke.userName,
+                userId: msg.stroke.userId,
+                visible: true,
+                strokes: [],
+                comments: [],
+              };
+              return {
+                ...prev,
+                [targetLayerId]: { ...existing, strokes: [...existing.strokes, msg.stroke] },
+              };
             });
             addActivity(
               msg.stroke.userName[0].toUpperCase(),
               msg.stroke.userName,
-              `drew a ${msg.stroke.tool} stroke`,
+              `drew a ${msg.stroke.tool} stroke`
             );
             break;
           }
@@ -298,13 +373,13 @@ export default function Canvas({
 
           case 'strokes_moved': {
             const moves: Array<{ id: string; points: Point[] }> = msg.strokes;
-            const moveMap = new Map(moves.map(m => [m.id, m.points]));
-            setLayers(prev => {
+            const moveMap = new Map(moves.map((m) => [m.id, m.points]));
+            setLayers((prev) => {
               const next: Record<string, LayerData> = {};
               for (const [lid, layer] of Object.entries(prev)) {
                 next[lid] = {
                   ...layer,
-                  strokes: layer.strokes.map(s =>
+                  strokes: layer.strokes.map((s) =>
                     moveMap.has(s.id) ? { ...s, points: moveMap.get(s.id)! } : s
                   ),
                 };
@@ -315,9 +390,11 @@ export default function Canvas({
           }
 
           case 'clear_canvas':
-            setLayers(prev => {
+            setLayers((prev) => {
               const next: Record<string, LayerData> = {};
-              for (const [lid, l] of Object.entries(prev)) next[lid] = { ...l, strokes: [] };
+              for (const [lid, l] of Object.entries(prev)) {
+                next[lid] = { ...l, strokes: [] };
+              }
               return next;
             });
             setImages([]);
@@ -325,27 +402,32 @@ export default function Canvas({
             break;
 
           case 'image':
-            setImages(prev => [...prev, msg.image as CanvasImage]);
+            setImages((prev) => [...prev, msg.image as CanvasImage]);
             break;
 
           case 'image_move':
-            setImages(prev => prev.map(img =>
-              img.id === msg.imageId ? { ...img, x: msg.x, y: msg.y } : img
-            ));
+            setImages((prev) =>
+              prev.map((img) => (img.id === msg.imageId ? { ...img, x: msg.x, y: msg.y } : img))
+            );
             break;
 
           case 'text':
-            setTexts(prev => [...prev, msg.canvasText as CanvasText]);
+            setTexts((prev) => [...prev, msg.canvasText as CanvasText]);
             break;
 
           case 'chat_message':
-            setChatMessages(prev => [...prev, { ...msg.message, time: new Date(msg.message.time) }]);
+            setChatMessages((prev) => [
+              ...prev,
+              { ...msg.message, time: new Date(msg.message.time) },
+            ]);
             break;
 
           case 'layer_comment':
-            setLayers(prev => {
+            setLayers((prev) => {
               const layer = prev[msg.layerUserId];
-              if (!layer) return prev;
+              if (!layer) {
+                return prev;
+              }
               return {
                 ...prev,
                 [msg.layerUserId]: {
@@ -360,8 +442,10 @@ export default function Canvas({
             if (msg.targetUserId === userId) {
               setMyPermission(msg.permission);
             }
-            setActiveUsers(prev =>
-              prev.map(u => u.id === msg.targetUserId ? { ...u, permission: msg.permission } : u)
+            setActiveUsers((prev) =>
+              prev.map((u) =>
+                u.id === msg.targetUserId ? { ...u, permission: msg.permission } : u
+              )
             );
             break;
         }
@@ -379,30 +463,45 @@ export default function Canvas({
 
   const triggerMiniMap = useCallback(() => {
     setShowMiniMap(true);
-    if (miniMapTimerRef.current) clearTimeout(miniMapTimerRef.current);
+    if (miniMapTimerRef.current) {
+      clearTimeout(miniMapTimerRef.current);
+    }
     miniMapTimerRef.current = setTimeout(() => setShowMiniMap(false), 1500);
   }, []);
 
   // ── Zoom / pan via mouse wheel ────────────────────────────────────────────────
 
-  const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
-    if (!e.ctrlKey && !e.metaKey) return;
-    e.preventDefault();
-    if (!svgRef.current) return;
-    const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    const rect = svgRef.current.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    setZoom(prevZoom => {
-      const next = Math.min(Math.max(prevZoom * factor, 0.1), 8);
-      setPan(prevPan => ({
-        x: prevPan.x + (mx / rect.width)  * (rect.width  / prevZoom) - (mx / rect.width)  * (rect.width  / next),
-        y: prevPan.y + (my / rect.height) * (rect.height / prevZoom) - (my / rect.height) * (rect.height / next),
-      }));
-      return next;
-    });
-    triggerMiniMap();
-  }, [triggerMiniMap]);
+  const handleWheel = useCallback(
+    (e: React.WheelEvent<SVGSVGElement>) => {
+      if (!e.ctrlKey && !e.metaKey) {
+        return;
+      }
+      e.preventDefault();
+      if (!svgRef.current) {
+        return;
+      }
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      const rect = svgRef.current.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      setZoom((prevZoom) => {
+        const next = Math.min(Math.max(prevZoom * factor, 0.1), 8);
+        setPan((prevPan) => ({
+          x:
+            prevPan.x +
+            (mx / rect.width) * (rect.width / prevZoom) -
+            (mx / rect.width) * (rect.width / next),
+          y:
+            prevPan.y +
+            (my / rect.height) * (rect.height / prevZoom) -
+            (my / rect.height) * (rect.height / next),
+        }));
+        return next;
+      });
+      triggerMiniMap();
+    },
+    [triggerMiniMap]
+  );
 
   // ── Context menu ─────────────────────────────────────────────────────────────
 
@@ -416,18 +515,25 @@ export default function Canvas({
   // ── Inline helper: commit any in-progress text (called from startDrawing) ─────
   const commitPendingTextInline = useCallback(() => {
     const pt0 = pendingTextRef.current;
-    const ti  = textInputRef.current.trim();
-    const t   = toolRef.current;
-    if (!pt0 || !ti) { setPendingText(null); setTextInput(''); return; }
+    const ti = textInputRef.current.trim();
+    const t = toolRef.current;
+    if (!pt0 || !ti) {
+      setPendingText(null);
+      setTextInput('');
+      return;
+    }
     const canvasText: CanvasText = {
-      id: generateId(), userId, userName,
+      id: generateId(),
+      userId,
+      userName,
       text: ti,
-      x: pt0.svgX, y: pt0.svgY,
+      x: pt0.svgX,
+      y: pt0.svgY,
       fontSize: Math.max(t.width, 12),
       color: t.color,
       timestamp: Date.now(),
     };
-    setTexts(prev => [...prev, canvasText]);
+    setTexts((prev) => [...prev, canvasText]);
     undoStackRef.current.push({ kind: 'add_text', text: canvasText });
     broadcast({ type: 'text', canvasText });
     addActivity(userName[0].toUpperCase(), 'You', 'added text');
@@ -437,154 +543,196 @@ export default function Canvas({
 
   // ── Drawing: start ────────────────────────────────────────────────────────────
 
-  const startDrawing = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (myPermission === 'viewer') return;
-    e.preventDefault();
-    if (!svgRef.current) return;
-    const pt = GeometryService.getSvgCoords(e, svgRef.current);
-    if (!pt) return;
+  const startDrawing = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      if (myPermission === 'viewer') {
+        return;
+      }
+      e.preventDefault();
+      if (!svgRef.current) {
+        return;
+      }
+      const pt = GeometryService.getSvgCoords(e, svgRef.current);
+      if (!pt) {
+        return;
+      }
 
-    // Pan tool or space-held: start canvas pan
-    if (toolRef.current.type === 'pan' || isSpaceHeld) {
-      isPanningRef.current = true;
-      triggerMiniMap();
-      const { x: clientX, y: clientY } = GeometryService.getClientCoords(e);
-      panStartRef.current = { mouseX: clientX, mouseY: clientY, panX: panRef.current.x, panY: panRef.current.y };
-      setIsDrawing(true);
-      return;
-    }
+      // Pan tool or space-held: start canvas pan
+      if (toolRef.current.type === 'pan' || isSpaceHeld) {
+        isPanningRef.current = true;
+        triggerMiniMap();
+        const { x: clientX, y: clientY } = GeometryService.getClientCoords(e);
+        panStartRef.current = {
+          mouseX: clientX,
+          mouseY: clientY,
+          panX: panRef.current.x,
+          panY: panRef.current.y,
+        };
+        setIsDrawing(true);
+        return;
+      }
 
-    // Text tool: commit any existing text then place a new input
-    if (toolRef.current.type === 'text') {
-      commitPendingTextInline();
-      const { x: clientX, y: clientY } = GeometryService.getClientCoords(e);
-      setPendingText({ svgX: pt.x, svgY: pt.y, clientX, clientY });
-      setTextInput('');
-      return;
-    }
+      // Text tool: commit any existing text then place a new input
+      if (toolRef.current.type === 'text') {
+        commitPendingTextInline();
+        const { x: clientX, y: clientY } = GeometryService.getClientCoords(e);
+        setPendingText({ svgX: pt.x, svgY: pt.y, clientX, clientY });
+        setTextInput('');
+        return;
+      }
 
-    setHoverInfo(null);
-    setContextMenu(null);
-    erasedThisGesture.current.clear();
-    erasedStrokesRef.current.clear();
-    currentStrokeRef.current = [pt];
+      setHoverInfo(null);
+      setContextMenu(null);
+      erasedThisGesture.current.clear();
+      erasedStrokesRef.current.clear();
+      currentStrokeRef.current = [pt];
 
-    if (toolRef.current.type === 'lasso') {
-      // Check if clicking on a selected stroke to start drag
-      if (selectedIds.size > 0) {
-        for (const layer of Object.values(layersRef.current)) {
-          for (const stroke of layer.strokes) {
-            if (selectedIds.has(stroke.id) && GeometryService.strokeHitsPoint(stroke, pt, 10)) {
-              isDraggingSelectionRef.current = true;
-              selectionDragStartRef.current = pt;
-              setIsDrawing(true);
-              return;
+      if (toolRef.current.type === 'lasso') {
+        // Check if clicking on a selected stroke to start drag
+        if (selectedIds.size > 0) {
+          for (const layer of Object.values(layersRef.current)) {
+            for (const stroke of layer.strokes) {
+              if (selectedIds.has(stroke.id) && GeometryService.strokeHitsPoint(stroke, pt, 10)) {
+                isDraggingSelectionRef.current = true;
+                selectionDragStartRef.current = pt;
+                setIsDrawing(true);
+                return;
+              }
             }
           }
         }
+        // Clear selection and start new lasso
+        setAndBroadcastSelection(new Set());
+        setLassoPoints([pt]);
+      } else {
+        setCurrentStroke([pt]);
       }
-      // Clear selection and start new lasso
-      setAndBroadcastSelection(new Set());
-      setLassoPoints([pt]);
-    } else {
-      setCurrentStroke([pt]);
-    }
-    setIsDrawing(true);
-  }, [myPermission, selectedIds, isSpaceHeld, commitPendingTextInline, triggerMiniMap]);
+      setIsDrawing(true);
+    },
+    [myPermission, selectedIds, isSpaceHeld, commitPendingTextInline, triggerMiniMap]
+  );
 
   // ── Image drag ────────────────────────────────────────────────────────────────
 
   const handleImageMouseDown = useCallback((imageId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!svgRef.current) return;
+    if (!svgRef.current) {
+      return;
+    }
     const pt = GeometryService.getSvgCoords(e, svgRef.current);
-    if (!pt) return;
-    const img = imagesRef.current.find(i => i.id === imageId);
-    if (!img) return;
+    if (!pt) {
+      return;
+    }
+    const img = imagesRef.current.find((i) => i.id === imageId);
+    if (!img) {
+      return;
+    }
     draggingImageRef.current = { id: imageId, offsetX: pt.x - img.x, offsetY: pt.y - img.y };
   }, []);
 
   // ── Drawing: move ─────────────────────────────────────────────────────────────
 
-  const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (!svgRef.current) return;
-    const pt = GeometryService.getSvgCoords(e, svgRef.current);
-    if (pt) setCursorPos(pt);
+  const draw = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      if (!svgRef.current) {
+        return;
+      }
+      const pt = GeometryService.getSvgCoords(e, svgRef.current);
+      if (pt) {
+        setCursorPos(pt);
+      }
 
-    // Image drag
-    if (draggingImageRef.current && pt) {
-      const { id, offsetX, offsetY } = draggingImageRef.current;
-      const x = Math.round(pt.x - offsetX);
-      const y = Math.round(pt.y - offsetY);
-      setImages(prev => prev.map(img => img.id === id ? { ...img, x, y } : img));
-      broadcast({ type: 'image_move', imageId: id, x, y });
-      return;
-    }
+      // Image drag
+      if (draggingImageRef.current && pt) {
+        const { id, offsetX, offsetY } = draggingImageRef.current;
+        const x = Math.round(pt.x - offsetX);
+        const y = Math.round(pt.y - offsetY);
+        setImages((prev) => prev.map((img) => (img.id === id ? { ...img, x, y } : img)));
+        broadcast({ type: 'image_move', imageId: id, x, y });
+        return;
+      }
 
-    // Selection drag
-    if (isDraggingSelectionRef.current && selectionDragStartRef.current && pt) {
-      const dx = pt.x - selectionDragStartRef.current.x;
-      const dy = pt.y - selectionDragStartRef.current.y;
-      setSelectionDragOffset({ dx, dy });
-      return;
-    }
+      // Selection drag
+      if (isDraggingSelectionRef.current && selectionDragStartRef.current && pt) {
+        const dx = pt.x - selectionDragStartRef.current.x;
+        const dy = pt.y - selectionDragStartRef.current.y;
+        setSelectionDragOffset({ dx, dy });
+        return;
+      }
 
-    // Hover attribution when idle
-    if (!isDrawing && pt && tool.type !== 'lasso') {
-      let found: { userName: string; x: number; y: number } | null = null;
-      outer: for (const layer of Object.values(layersRef.current)) {
-        for (const stroke of layer.strokes) {
-          if (GeometryService.strokeHitsPoint(stroke, pt, 7)) {
-            const { x, y } = GeometryService.getClientCoords(e);
-            found = { userName: stroke.userName, x, y };
-            break outer;
+      // Hover attribution when idle
+      if (!isDrawing && pt && tool.type !== 'lasso') {
+        let found: { userName: string; x: number; y: number } | null = null;
+        outer: for (const layer of Object.values(layersRef.current)) {
+          for (const stroke of layer.strokes) {
+            if (GeometryService.strokeHitsPoint(stroke, pt, 7)) {
+              const { x, y } = GeometryService.getClientCoords(e);
+              found = { userName: stroke.userName, x, y };
+              break outer;
+            }
           }
         }
+        setHoverInfo(found);
       }
-      setHoverInfo(found);
-    }
 
-    if (!isDrawing || !pt) return;
+      if (!isDrawing || !pt) {
+        return;
+      }
 
-    // Eraser only works on the current user's own layers.
-    // When activeLayerId is the sentinel '__all__', target all own layers;
-    // otherwise target only the specific active layer.
-    const eraserLayers = tool.type === 'eraser'
-      ? Object.fromEntries(
-          Object.entries(layersRef.current).filter(([lid, layer]) => {
-            if ((layer.userId ?? lid) !== userId) return false;
-            if (activeLayerIdRef.current === ALL_LAYERS_SENTINEL) return true;
-            return lid === activeLayerIdRef.current;
-          })
-        )
-      : layersRef.current;
+      // Eraser only works on the current user's own layers.
+      // When activeLayerId is the sentinel '__all__', target all own layers;
+      // otherwise target only the specific active layer.
+      const eraserLayers =
+        tool.type === 'eraser'
+          ? Object.fromEntries(
+              Object.entries(layersRef.current).filter(([lid, layer]) => {
+                if ((layer.userId ?? lid) !== userId) {
+                  return false;
+                }
+                if (activeLayerIdRef.current === ALL_LAYERS_SENTINEL) {
+                  return true;
+                }
+                return lid === activeLayerIdRef.current;
+              })
+            )
+          : layersRef.current;
 
-    const result = toolHandler.onMove(pt, currentStrokeRef.current, eraserLayers, erasedThisGesture.current);
-    currentStrokeRef.current = result.newPoints;
+      const result = toolHandler.onMove(
+        pt,
+        currentStrokeRef.current,
+        eraserLayers,
+        erasedThisGesture.current
+      );
+      currentStrokeRef.current = result.newPoints;
 
-    if (tool.type === 'lasso') {
-      setLassoPoints([...result.newPoints]);
-      broadcast({ type: 'lasso_update', userId, points: result.newPoints });
-    } else {
-      setCurrentStroke([...result.newPoints]);
-    }
+      if (tool.type === 'lasso') {
+        setLassoPoints([...result.newPoints]);
+        broadcast({ type: 'lasso_update', userId, points: result.newPoints });
+      } else {
+        setCurrentStroke([...result.newPoints]);
+      }
 
-    if (result.newlyErasedIds?.length) {
-      for (const id of result.newlyErasedIds) {
-        erasedThisGesture.current.add(id);
-        // Capture the stroke object before it is removed (for undo)
-        if (!erasedStrokesRef.current.has(id)) {
-          for (const [layerId, layer] of Object.entries(layersRef.current)) {
-            const stroke = layer.strokes.find(s => s.id === id);
-            if (stroke) { erasedStrokesRef.current.set(id, { layerId, stroke }); break; }
+      if (result.newlyErasedIds?.length) {
+        for (const id of result.newlyErasedIds) {
+          erasedThisGesture.current.add(id);
+          // Capture the stroke object before it is removed (for undo)
+          if (!erasedStrokesRef.current.has(id)) {
+            for (const [layerId, layer] of Object.entries(layersRef.current)) {
+              const stroke = layer.strokes.find((s) => s.id === id);
+              if (stroke) {
+                erasedStrokesRef.current.set(id, { layerId, stroke });
+                break;
+              }
+            }
           }
         }
+        removeStrokeIds(result.newlyErasedIds);
       }
-      removeStrokeIds(result.newlyErasedIds);
-    }
 
-    broadcast({ type: 'cursor_update', userId, cursor: pt });
-  }, [isDrawing, tool.type, toolHandler, userId, broadcast, removeStrokeIds]);
+      broadcast({ type: 'cursor_update', userId, cursor: pt });
+    },
+    [isDrawing, tool.type, toolHandler, userId, broadcast, removeStrokeIds]
+  );
 
   // ── Drawing: stop ─────────────────────────────────────────────────────────────
 
@@ -592,14 +740,18 @@ export default function Canvas({
     if (isPanningRef.current) {
       isPanningRef.current = false;
       panStartRef.current = null;
-      if (isDrawing) setIsDrawing(false);
+      if (isDrawing) {
+        setIsDrawing(false);
+      }
       return;
     }
     if (draggingImageRef.current) {
       draggingImageRef.current = null;
       return;
     }
-    if (!isDrawing) return;
+    if (!isDrawing) {
+      return;
+    }
     setIsDrawing(false);
 
     // Commit selection drag → push undo
@@ -608,26 +760,32 @@ export default function Canvas({
       const ids = Array.from(selectedIds);
       // Push undo before applying so layersRef still has pre-move positions
       undoStackRef.current.push({ kind: 'move', ids, dx, dy });
-      setLayers(prev => {
+      setLayers((prev) => {
         const next: Record<string, LayerData> = {};
         for (const [lid, layer] of Object.entries(prev)) {
           next[lid] = {
             ...layer,
-            strokes: layer.strokes.map(s =>
-              ids.includes(s.id) ? { ...s, points: s.points.map(p => ({ x: p.x + dx, y: p.y + dy })) } : s
+            strokes: layer.strokes.map((s) =>
+              ids.includes(s.id)
+                ? { ...s, points: s.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) }
+                : s
             ),
           };
         }
         return next;
       });
       // Broadcast moved strokes (compute final positions from current state + offset)
-      const movedStrokes = ids.map(id => {
-        for (const layer of Object.values(layersRef.current)) {
-          const s = layer.strokes.find(s => s.id === id);
-          if (s) return { id, points: s.points.map(p => ({ x: p.x + dx, y: p.y + dy })) };
-        }
-        return null;
-      }).filter(Boolean);
+      const movedStrokes = ids
+        .map((id) => {
+          for (const layer of Object.values(layersRef.current)) {
+            const s = layer.strokes.find((s) => s.id === id);
+            if (s) {
+              return { id, points: s.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
+            }
+          }
+          return null;
+        })
+        .filter(Boolean);
       broadcast({ type: 'strokes_moved', strokes: movedStrokes });
       isDraggingSelectionRef.current = false;
       selectionDragStartRef.current = null;
@@ -644,8 +802,12 @@ export default function Canvas({
       // Lasso only selects strokes from own layers (same scope as eraser)
       const lassoLayers = Object.fromEntries(
         Object.entries(layersRef.current).filter(([lid, l]) => {
-          if ((l.userId ?? lid) !== userId) return false;
-          if (activeLayerIdRef.current === ALL_LAYERS_SENTINEL) return true;
+          if ((l.userId ?? lid) !== userId) {
+            return false;
+          }
+          if (activeLayerIdRef.current === ALL_LAYERS_SENTINEL) {
+            return true;
+          }
           return lid === activeLayerIdRef.current;
         })
       );
@@ -657,9 +819,11 @@ export default function Canvas({
       // Only keep IDs that actually live in the allowed layer slice (defensive)
       const allowedIds = new Set<string>();
       for (const layer of Object.values(lassoLayers)) {
-        for (const s of layer.strokes) allowedIds.add(s.id);
+        for (const s of layer.strokes) {
+          allowedIds.add(s.id);
+        }
       }
-      setAndBroadcastSelection(new Set([...lassoSelection].filter(id => allowedIds.has(id))));
+      setAndBroadcastSelection(new Set([...lassoSelection].filter((id) => allowedIds.has(id))));
       return;
     }
 
@@ -671,16 +835,25 @@ export default function Canvas({
         const ownLayerIds = new Set(
           Object.entries(layersRef.current)
             .filter(([lid, l]) => {
-              if ((l.userId ?? lid) !== userId) return false;
-              if (activeLayerIdRef.current === ALL_LAYERS_SENTINEL) return true;
+              if ((l.userId ?? lid) !== userId) {
+                return false;
+              }
+              if (activeLayerIdRef.current === ALL_LAYERS_SENTINEL) {
+                return true;
+              }
               return lid === activeLayerIdRef.current;
             })
             .map(([lid]) => lid)
         );
         for (const [layerId, layer] of Object.entries(layersRef.current)) {
-          if (!ownLayerIds.has(layerId)) continue;
+          if (!ownLayerIds.has(layerId)) {
+            continue;
+          }
           for (const stroke of layer.strokes) {
-            if (!erasedThisGesture.current.has(stroke.id) && GeometryService.strokeHitsPoint(stroke, pt, radius)) {
+            if (
+              !erasedThisGesture.current.has(stroke.id) &&
+              GeometryService.strokeHitsPoint(stroke, pt, radius)
+            ) {
               erasedThisGesture.current.add(stroke.id);
               erasedStrokesRef.current.set(stroke.id, { layerId, stroke });
             }
@@ -696,7 +869,11 @@ export default function Canvas({
         const originals = Array.from(erasedStrokesRef.current.values());
         undoStackRef.current.push({ kind: 'erase', originals, addedSubIds: [] });
         broadcast({ type: 'strokes_erased', strokeIds: ids });
-        addActivity(userName[0].toUpperCase(), 'You', `erased ${ids.length} stroke${ids.length !== 1 ? 's' : ''}`);
+        addActivity(
+          userName[0].toUpperCase(),
+          'You',
+          `erased ${ids.length} stroke${ids.length !== 1 ? 's' : ''}`
+        );
       }
       erasedThisGesture.current.clear();
       erasedStrokesRef.current.clear();
@@ -715,11 +892,14 @@ export default function Canvas({
     }
 
     const { stroke } = toolHandler.onEnd(points, layersRef.current, userId, userName);
-    if (!stroke) return;
+    if (!stroke) {
+      return;
+    }
 
     // When 'All Layers' is the active sentinel, strokes go to the main userId layer
-    const lid = activeLayerIdRef.current === ALL_LAYERS_SENTINEL ? userId : activeLayerIdRef.current;
-    setLayers(prev => ({
+    const lid =
+      activeLayerIdRef.current === ALL_LAYERS_SENTINEL ? userId : activeLayerIdRef.current;
+    setLayers((prev) => ({
       ...prev,
       [lid]: {
         userName: prev[lid]?.userName ?? userName,
@@ -732,36 +912,60 @@ export default function Canvas({
     undoStackRef.current.push({ kind: 'add_stroke', stroke, layerId: lid });
     addActivity(userName[0].toUpperCase(), 'You', `drew a ${toolRef.current.type} stroke`);
     broadcast({ type: 'stroke', stroke, layerId: lid });
-  }, [isDrawing, toolHandler, userId, userName, broadcast, addActivity, selectedIds, selectionDragOffset]);
+  }, [
+    isDrawing,
+    toolHandler,
+    userId,
+    userName,
+    broadcast,
+    addActivity,
+    selectedIds,
+    selectionDragOffset,
+  ]);
 
   // ── Middle-mouse pan wrappers (defined after startDrawing/draw) ──────────────
 
-  const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
-    if (e.button === 1) {
-      e.preventDefault();
-      isPanningRef.current = true;
-      panStartRef.current = { mouseX: e.clientX, mouseY: e.clientY, panX: panRef.current.x, panY: panRef.current.y };
-      return;
-    }
-    if (e.button === 2) return;
-    startDrawing(e);
-  }, [startDrawing]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      if (e.button === 1) {
+        e.preventDefault();
+        isPanningRef.current = true;
+        panStartRef.current = {
+          mouseX: e.clientX,
+          mouseY: e.clientY,
+          panX: panRef.current.x,
+          panY: panRef.current.y,
+        };
+        return;
+      }
+      if (e.button === 2) {
+        return;
+      }
+      startDrawing(e);
+    },
+    [startDrawing]
+  );
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
-    if (isPanningRef.current && panStartRef.current) {
-      const dx = (e.clientX - panStartRef.current.mouseX) / zoom;
-      const dy = (e.clientY - panStartRef.current.mouseY) / zoom;
-      setPan({ x: panStartRef.current.panX - dx, y: panStartRef.current.panY - dy });
-      triggerMiniMap();
-      return;
-    }
-    draw(e);
-  }, [zoom, draw, triggerMiniMap]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      if (isPanningRef.current && panStartRef.current) {
+        const dx = (e.clientX - panStartRef.current.mouseX) / zoom;
+        const dy = (e.clientY - panStartRef.current.mouseY) / zoom;
+        setPan({ x: panStartRef.current.panX - dx, y: panStartRef.current.panY - dy });
+        triggerMiniMap();
+        return;
+      }
+      draw(e);
+    },
+    [zoom, draw, triggerMiniMap]
+  );
 
   // ── Delete lasso selection ────────────────────────────────────────────────────
 
   const deleteSelected = useCallback(() => {
-    if (!selectedIds.size) return;
+    if (!selectedIds.size) {
+      return;
+    }
     const ids = Array.from(selectedIds);
     const found = getStrokesByIds(ids);
     undoStackRef.current.push({ kind: 'erase', originals: found, addedSubIds: [] });
@@ -774,16 +978,20 @@ export default function Canvas({
   // ── Copy / Cut / Paste ────────────────────────────────────────────────────────
 
   const copySelected = useCallback(() => {
-    if (!selectedIds.size) return;
-    const strokes = getStrokesByIds(Array.from(selectedIds)).map(e => e.stroke);
+    if (!selectedIds.size) {
+      return;
+    }
+    const strokes = getStrokesByIds(Array.from(selectedIds)).map((e) => e.stroke);
     setClipboardStrokes(strokes);
   }, [selectedIds, getStrokesByIds]);
 
   const cutSelected = useCallback(() => {
-    if (!selectedIds.size) return;
+    if (!selectedIds.size) {
+      return;
+    }
     const ids = Array.from(selectedIds);
     const found = getStrokesByIds(ids);
-    setClipboardStrokes(found.map(e => e.stroke));
+    setClipboardStrokes(found.map((e) => e.stroke));
     undoStackRef.current.push({ kind: 'erase', originals: found, addedSubIds: [] });
     removeStrokeIds(ids);
     broadcast({ type: 'strokes_erased', strokeIds: ids });
@@ -792,16 +1000,19 @@ export default function Canvas({
   }, [selectedIds, getStrokesByIds, removeStrokeIds, broadcast, setAndBroadcastSelection]);
 
   const pasteStrokes = useCallback(() => {
-    if (!clipboardStrokes?.length) return;
+    if (!clipboardStrokes?.length) {
+      return;
+    }
     const OFFSET = 20;
-    const lid = activeLayerIdRef.current === ALL_LAYERS_SENTINEL ? userId : activeLayerIdRef.current;
-    const newStrokes: Stroke[] = clipboardStrokes.map(s => ({
+    const lid =
+      activeLayerIdRef.current === ALL_LAYERS_SENTINEL ? userId : activeLayerIdRef.current;
+    const newStrokes: Stroke[] = clipboardStrokes.map((s) => ({
       ...s,
       id: generateId(),
       timestamp: Date.now(),
-      points: s.points.map(p => ({ x: p.x + OFFSET, y: p.y + OFFSET })),
+      points: s.points.map((p) => ({ x: p.x + OFFSET, y: p.y + OFFSET })),
     }));
-    setLayers(prev => ({
+    setLayers((prev) => ({
       ...prev,
       [lid]: {
         userName: prev[lid]?.userName ?? userName,
@@ -816,21 +1027,26 @@ export default function Canvas({
       broadcast({ type: 'stroke', stroke, layerId: lid });
     }
     // Select pasted strokes
-    setAndBroadcastSelection(new Set(newStrokes.map(s => s.id)));
-    addActivity(userName[0].toUpperCase(), 'You', `pasted ${newStrokes.length} stroke${newStrokes.length !== 1 ? 's' : ''}`);
+    setAndBroadcastSelection(new Set(newStrokes.map((s) => s.id)));
+    addActivity(
+      userName[0].toUpperCase(),
+      'You',
+      `pasted ${newStrokes.length} stroke${newStrokes.length !== 1 ? 's' : ''}`
+    );
   }, [clipboardStrokes, userId, userName, broadcast, addActivity, setAndBroadcastSelection]);
 
   // ── Undo ──────────────────────────────────────────────────────────────────────
 
   const undo = useCallback(() => {
     const entry = undoStackRef.current.pop();
-    if (!entry) return;
+    if (!entry) {
+      return;
+    }
     addActivity(userName[0].toUpperCase(), 'You', 'undid an action');
 
     if (entry.kind === 'add_stroke') {
       removeStrokeIds([entry.stroke.id]);
       broadcast({ type: 'strokes_erased', strokeIds: [entry.stroke.id] });
-
     } else if (entry.kind === 'erase') {
       // Remove the sub-strokes that were added by the segment eraser
       if (entry.addedSubIds.length) {
@@ -838,7 +1054,7 @@ export default function Canvas({
         broadcast({ type: 'strokes_erased', strokeIds: entry.addedSubIds });
       }
       // Re-add the original strokes
-      setLayers(prev => {
+      setLayers((prev) => {
         const next = { ...prev };
         for (const { layerId, stroke } of entry.originals) {
           if (next[layerId]) {
@@ -850,38 +1066,38 @@ export default function Canvas({
       for (const { layerId, stroke } of entry.originals) {
         broadcast({ type: 'stroke', stroke, layerId });
       }
-
     } else if (entry.kind === 'clear') {
-      setLayers(prev => {
+      setLayers((prev) => {
         const next = { ...prev };
         for (const [lid, strokes] of Object.entries(entry.strokesByLayer)) {
-          if (next[lid]) next[lid] = { ...next[lid], strokes };
+          if (next[lid]) {
+            next[lid] = { ...next[lid], strokes };
+          }
         }
         return next;
       });
       setImages(entry.images);
       setTexts(entry.texts);
       for (const strokes of Object.values(entry.strokesByLayer)) {
-        for (const stroke of strokes) broadcast({ type: 'stroke', stroke });
+        for (const stroke of strokes) {
+          broadcast({ type: 'stroke', stroke });
+        }
       }
-
     } else if (entry.kind === 'add_text') {
-      setTexts(prev => prev.filter(t => t.id !== entry.text.id));
-
+      setTexts((prev) => prev.filter((t) => t.id !== entry.text.id));
     } else if (entry.kind === 'add_image') {
-      setImages(prev => prev.filter(i => i.id !== entry.image.id));
-
+      setImages((prev) => prev.filter((i) => i.id !== entry.image.id));
     } else if (entry.kind === 'move') {
       // Reverse the move
       const idSet = new Set(entry.ids);
-      setLayers(prev => {
+      setLayers((prev) => {
         const next: Record<string, LayerData> = {};
         for (const [lid, layer] of Object.entries(prev)) {
           next[lid] = {
             ...layer,
-            strokes: layer.strokes.map(s =>
+            strokes: layer.strokes.map((s) =>
               idSet.has(s.id)
-                ? { ...s, points: s.points.map(p => ({ x: p.x - entry.dx, y: p.y - entry.dy })) }
+                ? { ...s, points: s.points.map((p) => ({ x: p.x - entry.dx, y: p.y - entry.dy })) }
                 : s
             ),
           };
@@ -889,13 +1105,20 @@ export default function Canvas({
         return next;
       });
       // Broadcast reversed positions (use layersRef which is still pre-update, apply -dx -dy)
-      const reversed = entry.ids.map(id => {
-        for (const layer of Object.values(layersRef.current)) {
-          const s = layer.strokes.find(s => s.id === id);
-          if (s) return { id, points: s.points.map(p => ({ x: p.x - entry.dx, y: p.y - entry.dy })) };
-        }
-        return null;
-      }).filter(Boolean);
+      const reversed = entry.ids
+        .map((id) => {
+          for (const layer of Object.values(layersRef.current)) {
+            const s = layer.strokes.find((s) => s.id === id);
+            if (s) {
+              return {
+                id,
+                points: s.points.map((p) => ({ x: p.x - entry.dx, y: p.y - entry.dy })),
+              };
+            }
+          }
+          return null;
+        })
+        .filter(Boolean);
       broadcast({ type: 'strokes_moved', strokes: reversed });
     }
   }, [removeStrokeIds, broadcast, addActivity, userName]);
@@ -907,11 +1130,18 @@ export default function Canvas({
     for (const [lid, layer] of Object.entries(layersRef.current)) {
       strokesByLayer[lid] = [...layer.strokes];
     }
-    undoStackRef.current.push({ kind: 'clear', strokesByLayer, images: [...imagesRef.current], texts: [] });
+    undoStackRef.current.push({
+      kind: 'clear',
+      strokesByLayer,
+      images: [...imagesRef.current],
+      texts: [],
+    });
 
-    setLayers(prev => {
+    setLayers((prev) => {
       const next: Record<string, LayerData> = {};
-      for (const [lid, l] of Object.entries(prev)) next[lid] = { ...l, strokes: [] };
+      for (const [lid, l] of Object.entries(prev)) {
+        next[lid] = { ...l, strokes: [] };
+      }
       return next;
     });
     setImages([]);
@@ -928,25 +1158,40 @@ export default function Canvas({
 
   // ── Image upload ──────────────────────────────────────────────────────────────
 
-  const uploadImage = useCallback((file: File) => {
-    ImageService.processFile(file).then(({ dataUrl, width, height }) => {
-      const svg = svgRef.current;
-      const x = svg ? Math.round(svg.clientWidth  / 2 - width  / 2) : 100;
-      const y = svg ? Math.round(svg.clientHeight / 2 - height / 2) : 100;
-      const image: CanvasImage = {
-        id: generateId(), userId, userName, dataUrl, x, y, width, height, timestamp: Date.now(),
-      };
-      setImages(prev => [...prev, image]);
-      undoStackRef.current.push({ kind: 'add_image', image });
-      broadcast({ type: 'image', image });
-      addActivity(userName[0].toUpperCase(), 'You', 'added an image');
-    }).catch(err => console.error('Image upload failed:', err));
-  }, [userId, userName, broadcast, addActivity]);
+  const uploadImage = useCallback(
+    (file: File) => {
+      ImageService.processFile(file)
+        .then(({ dataUrl, width, height }) => {
+          const svg = svgRef.current;
+          const x = svg ? Math.round(svg.clientWidth / 2 - width / 2) : 100;
+          const y = svg ? Math.round(svg.clientHeight / 2 - height / 2) : 100;
+          const image: CanvasImage = {
+            id: generateId(),
+            userId,
+            userName,
+            dataUrl,
+            x,
+            y,
+            width,
+            height,
+            timestamp: Date.now(),
+          };
+          setImages((prev) => [...prev, image]);
+          undoStackRef.current.push({ kind: 'add_image', image });
+          broadcast({ type: 'image', image });
+          addActivity(userName[0].toUpperCase(), 'You', 'added an image');
+        })
+        .catch((err) => console.error('Image upload failed:', err));
+    },
+    [userId, userName, broadcast, addActivity]
+  );
 
   // ── Export ────────────────────────────────────────────────────────────────────
 
   const exportCanvas = useCallback(() => {
-    if (svgRef.current) exporter.exportToPng(svgRef.current);
+    if (svgRef.current) {
+      exporter.exportToPng(svgRef.current);
+    }
   }, []);
 
   // ── Copy share link ───────────────────────────────────────────────────────────
@@ -962,36 +1207,49 @@ export default function Canvas({
   // ── Chat ──────────────────────────────────────────────────────────────────────
 
   const sendChat = useCallback(() => {
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim()) {
+      return;
+    }
     const message: ChatMessage = {
-      id: generateId(), userId, userName, text: chatInput.trim(), time: new Date(),
+      id: generateId(),
+      userId,
+      userName,
+      text: chatInput.trim(),
+      time: new Date(),
     };
-    setChatMessages(prev => [...prev, message]);
+    setChatMessages((prev) => [...prev, message]);
     broadcast({ type: 'chat_message', message });
     setChatInput('');
   }, [chatInput, userId, userName, broadcast]);
 
   // ── Layer comments ────────────────────────────────────────────────────────────
 
-  const handleAddLayerComment = useCallback((layerUserId: string, comment: LayerComment) => {
-    setLayers(prev => {
-      const layer = prev[layerUserId];
-      if (!layer) return prev;
-      return {
-        ...prev,
-        [layerUserId]: { ...layer, comments: [...(layer.comments ?? []), comment] },
-      };
-    });
-    broadcast({ type: 'layer_comment', layerUserId, comment });
-  }, [broadcast]);
+  const handleAddLayerComment = useCallback(
+    (layerUserId: string, comment: LayerComment) => {
+      setLayers((prev) => {
+        const layer = prev[layerUserId];
+        if (!layer) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [layerUserId]: { ...layer, comments: [...(layer.comments ?? []), comment] },
+        };
+      });
+      broadcast({ type: 'layer_comment', layerUserId, comment });
+    },
+    [broadcast]
+  );
 
   // ── Add layer for current user ────────────────────────────────────────────────
 
   const handleAddLayer = useCallback(() => {
-    const existingCount = Object.values(layersRef.current).filter(l => l.userId === userId).length;
+    const existingCount = Object.values(layersRef.current).filter(
+      (l) => l.userId === userId
+    ).length;
     const newLayerId = `${userId}_${Date.now()}`;
     const newLayerName = `${userName} (Layer ${existingCount + 1})`;
-    setLayers(prev => ({
+    setLayers((prev) => ({
       ...prev,
       [newLayerId]: {
         userName: newLayerName,
@@ -1011,50 +1269,87 @@ export default function Canvas({
 
   // ── Permission change ─────────────────────────────────────────────────────────
 
-  const handlePermissionChange = useCallback((targetUserId: string, permission: UserPermission) => {
-    setActiveUsers(prev =>
-      prev.map(u => u.id === targetUserId ? { ...u, permission } : u)
-    );
-    broadcast({ type: 'permission_update', targetUserId, permission });
-  }, [broadcast]);
+  const handlePermissionChange = useCallback(
+    (targetUserId: string, permission: UserPermission) => {
+      setActiveUsers((prev) => prev.map((u) => (u.id === targetUserId ? { ...u, permission } : u)));
+      broadcast({ type: 'permission_update', targetUserId, permission });
+    },
+    [broadcast]
+  );
 
   // ── Keyboard shortcuts + space-hold pan ──────────────────────────────────────
 
   useEffect(() => {
     const TOOL_HOTKEYS: Record<string, DrawingTool['type']> = {
-      p: 'pen', h: 'highlighter', e: 'eraser', l: 'lasso', t: 'text', v: 'pan',
+      p: 'pen',
+      h: 'highlighter',
+      e: 'eraser',
+      l: 'lasso',
+      t: 'text',
+      v: 'pan',
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
 
-      if (e.key === ' ' && !e.repeat) { e.preventDefault(); setIsSpaceHeld(true); return; }
+      if (e.key === ' ' && !e.repeat) {
+        e.preventDefault();
+        setIsSpaceHeld(true);
+        return;
+      }
 
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdsRef.current.size) deleteSelected();
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdsRef.current.size) {
+        deleteSelected();
+      }
 
-      if (e.key === 'Escape') { setAndBroadcastSelection(new Set()); setContextMenu(null); }
+      if (e.key === 'Escape') {
+        setAndBroadcastSelection(new Set());
+        setContextMenu(null);
+      }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        undo();
+      }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === '0') { e.preventDefault(); setZoom(1); setPan({ x: 0, y: 0 }); }
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault();
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+      }
 
       // Copy / Cut / Paste
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copySelected(); }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'x') { e.preventDefault(); cutSelected(); }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); pasteStrokes(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+        copySelected();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+        e.preventDefault();
+        cutSelected();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        pasteStrokes();
+      }
 
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
         const type = TOOL_HOTKEYS[e.key.toLowerCase()];
         if (type) {
-          if (toolRef.current.type === 'text') commitPendingTextInline();
-          setTool(prev => ({ ...prev, type }));
+          if (toolRef.current.type === 'text') {
+            commitPendingTextInline();
+          }
+          setTool((prev) => ({ ...prev, type }));
           setAndBroadcastSelection(new Set());
         }
       }
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key === ' ') setIsSpaceHeld(false);
+      if (e.key === ' ') {
+        setIsSpaceHeld(false);
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -1063,7 +1358,15 @@ export default function Canvas({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [deleteSelected, undo, commitPendingTextInline, copySelected, cutSelected, pasteStrokes, setAndBroadcastSelection]);
+  }, [
+    deleteSelected,
+    undo,
+    commitPendingTextInline,
+    copySelected,
+    cutSelected,
+    pasteStrokes,
+    setAndBroadcastSelection,
+  ]);
 
   // ── Global pointer-up ─────────────────────────────────────────────────────────
 
@@ -1071,13 +1374,18 @@ export default function Canvas({
     const up = () => stopDrawing();
     window.addEventListener('mouseup', up);
     window.addEventListener('touchend', up);
-    return () => { window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up); };
+    return () => {
+      window.removeEventListener('mouseup', up);
+      window.removeEventListener('touchend', up);
+    };
   }, [stopDrawing]);
 
   // ── Dismiss context menu on outside click ─────────────────────────────────────
 
   useEffect(() => {
-    if (!contextMenu) return;
+    if (!contextMenu) {
+      return;
+    }
     const dismiss = () => setContextMenu(null);
     window.addEventListener('mousedown', dismiss);
     return () => window.removeEventListener('mousedown', dismiss);
@@ -1085,19 +1393,32 @@ export default function Canvas({
 
   // ── Derived values ────────────────────────────────────────────────────────────
 
-  const totalStrokes  = Object.values(layers).reduce((n, l) => n + l.strokes.length, 0);
-  const shareUrl      = typeof window !== 'undefined' ? `${window.location.origin}?session=${sessionId}` : '';
-  const canvasTitle   = sessionId === 'default' ? 'Untitled Canvas' : sessionId;
+  const totalStrokes = Object.values(layers).reduce((n, l) => n + l.strokes.length, 0);
+  const shareUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}?session=${sessionId}` : '';
+  const canvasTitle = sessionId === 'default' ? 'Untitled Canvas' : sessionId;
   // showMiniMap is managed by triggerMiniMap() + auto-hide timer (defined above)
 
   const cursorClass = (() => {
-    if (myPermission === 'viewer') return 'not-allowed';
-    if (isSpaceHeld) return isPanningRef.current ? 'grabbing' : 'grab';
-    if (tool.type === 'pan') return isPanningRef.current ? 'grabbing' : 'grab';
-    if (tool.type === 'eraser') return 'none';
+    if (myPermission === 'viewer') {
+      return 'not-allowed';
+    }
+    if (isSpaceHeld) {
+      return isPanningRef.current ? 'grabbing' : 'grab';
+    }
+    if (tool.type === 'pan') {
+      return isPanningRef.current ? 'grabbing' : 'grab';
+    }
+    if (tool.type === 'eraser') {
+      return 'none';
+    }
     if (tool.type === 'lasso') {
-      if (selectionDragOffset) return 'grabbing';
-      if (selectedIds.size > 0) return 'grab';
+      if (selectionDragOffset) {
+        return 'grabbing';
+      }
+      if (selectedIds.size > 0) {
+        return 'grab';
+      }
     }
     return toolHandler.cursor;
   })();
@@ -1106,7 +1427,6 @@ export default function Canvas({
 
   return (
     <div className="app-layout">
-
       {/* ── Left sidebar ── */}
       <CanvasSidebar
         userId={userId}
@@ -1121,7 +1441,6 @@ export default function Canvas({
 
       {/* ── Main area ── */}
       <div className="main">
-
         {/* Topbar */}
         <div className="topbar">
           <div className="canvas-title-area">
@@ -1131,7 +1450,14 @@ export default function Canvas({
             </span>
             {myPermission === 'viewer' && (
               <span className="canvas-badge canvas-badge--viewer">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
@@ -1150,7 +1476,7 @@ export default function Canvas({
                 max={800}
                 step={5}
                 value={Math.round(zoom * 100)}
-                onChange={e => {
+                onChange={(e) => {
                   const next = Number(e.target.value) / 100;
                   setZoom(next);
                 }}
@@ -1158,7 +1484,10 @@ export default function Canvas({
               {zoom !== 1 && (
                 <button
                   className="zoom-reset-btn"
-                  onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+                  onClick={() => {
+                    setZoom(1);
+                    setPan({ x: 0, y: 0 });
+                  }}
                   title="Reset zoom (Ctrl+0)"
                 >
                   Reset
@@ -1167,7 +1496,14 @@ export default function Canvas({
             </div>
             {selectedIds.size > 0 && (
               <button className="action-btn action-btn--danger" onClick={deleteSelected}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <polyline points="3 6 5 6 21 6" />
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
                 </svg>
@@ -1175,19 +1511,36 @@ export default function Canvas({
               </button>
             )}
             <div className="avatar-stack">
-              <div className="user-avatar topbar-avatar" style={{ background: UserColorService.getColor(userId) }}>
+              <div
+                className="user-avatar topbar-avatar"
+                style={{ background: UserColorService.getColor(userId) }}
+              >
                 {userName[0].toUpperCase()}
               </div>
-              {activeUsers.slice(0, 3).map(u => (
-                <div key={u.id} className="user-avatar topbar-avatar" title={u.permission === 'viewer' ? `${u.name} (viewer)` : u.name} style={{ background: u.color }}>
+              {activeUsers.slice(0, 3).map((u) => (
+                <div
+                  key={u.id}
+                  className="user-avatar topbar-avatar"
+                  title={u.permission === 'viewer' ? `${u.name} (viewer)` : u.name}
+                  style={{ background: u.color }}
+                >
                   {u.name[0].toUpperCase()}
                   {u.permission === 'viewer' && <span className="viewer-dot" />}
                 </div>
               ))}
             </div>
             <button className="share-btn" onClick={() => setShareModalOpen(true)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
               </svg>
@@ -1198,8 +1551,10 @@ export default function Canvas({
 
         <Toolbar
           tool={tool}
-          onToolChange={t => {
-            if (tool.type === 'text') commitPendingTextInline();
+          onToolChange={(t) => {
+            if (tool.type === 'text') {
+              commitPendingTextInline();
+            }
             setTool(t);
             setAndBroadcastSelection(new Set());
           }}
@@ -1245,55 +1600,76 @@ export default function Canvas({
         />
 
         {/* Floating text input overlay */}
-        {pendingText && (() => {
-          const rect = svgRef.current?.getBoundingClientRect();
-          const left = rect ? rect.left + (pendingText.svgX - pan.x) * zoom : pendingText.clientX;
-          const top  = rect ? rect.top  + (pendingText.svgY - pan.y) * zoom : pendingText.clientY;
-          return (
-            <input
-              autoFocus
-              type="text"
-              value={textInput}
-              onChange={e => setTextInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') commitText();
-                if (e.key === 'Escape') { setPendingText(null); setTextInput(''); }
-              }}
-              onBlur={commitText}
-              style={{
-                position: 'fixed',
-                left,
-                top,
-                font: `${Math.max(tool.width, 12)}px sans-serif`,
-                color: tool.color,
-                background: 'transparent',
-                border: 'none',
-                outline: '1.5px dashed #0284c7',
-                padding: '0 2px',
-                minWidth: 80,
-                zIndex: 100,
-              }}
-            />
-          );
-        })()}
+        {pendingText &&
+          (() => {
+            const rect = svgRef.current?.getBoundingClientRect();
+            const left = rect ? rect.left + (pendingText.svgX - pan.x) * zoom : pendingText.clientX;
+            const top = rect ? rect.top + (pendingText.svgY - pan.y) * zoom : pendingText.clientY;
+            return (
+              <input
+                autoFocus
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    commitText();
+                  }
+                  if (e.key === 'Escape') {
+                    setPendingText(null);
+                    setTextInput('');
+                  }
+                }}
+                onBlur={commitText}
+                style={{
+                  position: 'fixed',
+                  left,
+                  top,
+                  font: `${Math.max(tool.width, 12)}px sans-serif`,
+                  color: tool.color,
+                  background: 'transparent',
+                  border: 'none',
+                  outline: '1.5px dashed #0284c7',
+                  padding: '0 2px',
+                  minWidth: 80,
+                  zIndex: 100,
+                }}
+              />
+            );
+          })()}
 
         {/* Right-click context menu */}
         {contextMenu && (
           <div
             className="canvas-context-menu"
             style={{ left: contextMenu.x, top: contextMenu.y }}
-            onMouseDown={e => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <button className="context-menu-item" onClick={copySelected}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
               </svg>
               Copy <kbd>⌘C</kbd>
             </button>
             <button className="context-menu-item" onClick={cutSelected}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="6" cy="6" r="3" />
+                <circle cx="6" cy="18" r="3" />
                 <line x1="20" y1="4" x2="8.12" y2="15.88" />
                 <line x1="14.47" y1="14.48" x2="20" y2="20" />
                 <line x1="8.12" y1="8.12" x2="12" y2="12" />
@@ -1301,16 +1677,37 @@ export default function Canvas({
               Cut <kbd>⌘X</kbd>
             </button>
             <div className="context-menu-separator" />
-            <button className="context-menu-item context-menu-item--danger" onClick={deleteSelected}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <button
+              className="context-menu-item context-menu-item--danger"
+              onClick={deleteSelected}
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
               </svg>
               Delete {selectedIds.size} selected
             </button>
-            <button className="context-menu-item" onClick={() => setAndBroadcastSelection(new Set())}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            <button
+              className="context-menu-item"
+              onClick={() => setAndBroadcastSelection(new Set())}
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
               Deselect
             </button>
@@ -1328,8 +1725,8 @@ export default function Canvas({
         activeLayerId={activeLayerId}
         soloUserId={soloUserId}
         onSoloChange={setSoloUserId}
-        onVisibilityToggle={uid =>
-          setLayers(prev => ({ ...prev, [uid]: { ...prev[uid], visible: !prev[uid].visible } }))
+        onVisibilityToggle={(uid) =>
+          setLayers((prev) => ({ ...prev, [uid]: { ...prev[uid], visible: !prev[uid].visible } }))
         }
         onAddLayerComment={handleAddLayerComment}
         onAddLayer={handleAddLayer}

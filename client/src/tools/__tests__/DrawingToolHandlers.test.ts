@@ -51,7 +51,10 @@ describe('PenToolHandler', () => {
   });
 
   it('onEnd returns a stroke with correct shape', () => {
-    const points: Point[] = [{ x: 0, y: 0 }, { x: 10, y: 10 }];
+    const points: Point[] = [
+      { x: 0, y: 0 },
+      { x: 10, y: 10 },
+    ];
     const result = handler.onEnd(points, emptyLayers, 'user-1', 'Alice');
 
     expect(result.stroke).toBeDefined();
@@ -96,7 +99,10 @@ describe('HighlighterToolHandler', () => {
   });
 
   it('onEnd returns a stroke with tool type "highlighter"', () => {
-    const points: Point[] = [{ x: 0, y: 0 }, { x: 20, y: 20 }];
+    const points: Point[] = [
+      { x: 0, y: 0 },
+      { x: 20, y: 20 },
+    ];
     const result = handler.onEnd(points, emptyLayers, 'user-1', 'Alice');
 
     expect(result.stroke!.tool).toBe('highlighter');
@@ -166,12 +172,25 @@ describe('LassoToolHandler', () => {
 
   it('onEnd returns empty result for fewer than 3 points', () => {
     expect(handler.onEnd([], emptyLayers, 'u1', 'Alice')).toEqual({});
-    expect(handler.onEnd([{ x: 0, y: 0 }, { x: 5, y: 5 }], emptyLayers, 'u1', 'Alice')).toEqual({});
+    expect(
+      handler.onEnd(
+        [
+          { x: 0, y: 0 },
+          { x: 5, y: 5 },
+        ],
+        emptyLayers,
+        'u1',
+        'Alice'
+      )
+    ).toEqual({});
   });
 
   it('onEnd selects strokes inside the lasso polygon', () => {
     const boxLasso: Point[] = [
-      { x: 0, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 20 }, { x: 0, y: 20 },
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      { x: 20, y: 20 },
+      { x: 0, y: 20 },
     ];
     const layers = makeLayers([makeStroke([{ x: 10, y: 10 }])]);
     const result = handler.onEnd(boxLasso, layers, 'u1', 'Alice');
@@ -181,7 +200,10 @@ describe('LassoToolHandler', () => {
 
   it('onEnd does not select strokes outside the lasso polygon', () => {
     const boxLasso: Point[] = [
-      { x: 0, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 5 }, { x: 0, y: 5 },
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+      { x: 5, y: 5 },
+      { x: 0, y: 5 },
     ];
     const layers = makeLayers([makeStroke([{ x: 50, y: 50 }])]);
     const result = handler.onEnd(boxLasso, layers, 'u1', 'Alice');
@@ -190,7 +212,10 @@ describe('LassoToolHandler', () => {
 
   it('onEnd returns an empty Set when no strokes exist', () => {
     const boxLasso: Point[] = [
-      { x: 0, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 20 }, { x: 0, y: 20 },
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      { x: 20, y: 20 },
+      { x: 0, y: 20 },
     ];
     const result = handler.onEnd(boxLasso, emptyLayers, 'u1', 'Alice');
     expect(result.lassoSelection!.size).toBe(0);

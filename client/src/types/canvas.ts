@@ -75,7 +75,9 @@ export function generateId(): string {
 }
 
 export function pointsToSvgPath(points: Point[]): string {
-  if (points.length === 0) return '';
+  if (points.length === 0) {
+    return '';
+  }
   if (points.length === 1) {
     return `M ${points[0].x} ${points[0].y}`;
   }
@@ -149,7 +151,12 @@ export interface LayerData {
 export type UndoAction =
   | { kind: 'add_stroke'; stroke: Stroke; layerId: string }
   | { kind: 'erase'; originals: Array<{ layerId: string; stroke: Stroke }>; addedSubIds: string[] }
-  | { kind: 'clear'; strokesByLayer: Record<string, Stroke[]>; images: CanvasImage[]; texts: CanvasText[] }
+  | {
+      kind: 'clear';
+      strokesByLayer: Record<string, Stroke[]>;
+      images: CanvasImage[];
+      texts: CanvasText[];
+    }
   | { kind: 'add_text'; text: CanvasText }
   | { kind: 'add_image'; image: CanvasImage }
   | { kind: 'move'; ids: string[]; dx: number; dy: number };

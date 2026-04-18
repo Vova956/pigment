@@ -35,9 +35,7 @@ describe('UserColorService.getColor', () => {
   });
 
   it('always returns one of the predefined palette colours', () => {
-    const palette = [
-      '#e85d04', '#0d9488', '#7c3aed', '#e11d48', '#0284c7', '#d97706',
-    ];
+    const palette = ['#e85d04', '#0d9488', '#7c3aed', '#e11d48', '#0284c7', '#d97706'];
     const testIds = Array.from({ length: 50 }, (_, i) => `user-${i}`);
     for (const id of testIds) {
       expect(palette).toContain(UserColorService.getColor(id));

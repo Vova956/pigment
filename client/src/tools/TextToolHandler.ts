@@ -8,6 +8,10 @@ import { DrawingToolHandler } from './DrawingToolHandler';
  * intercepts pointer-down for this tool and opens the text input overlay.
  */
 export class TextToolHandler extends DrawingToolHandler {
-  get cursor(): string { return 'text'; }
-  get hasStrokePreview(): boolean { return false; }
+  get cursor(): string {
+    return 'text';
+  }
+  get hasStrokePreview(): boolean {
+    return false;
+  }
 }

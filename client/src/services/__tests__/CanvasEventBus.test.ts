@@ -24,7 +24,9 @@ function makeStroke(overrides: Partial<Stroke> = {}): Stroke {
 describe('CanvasEventBus.on (subscribe)', () => {
   let bus: CanvasEventBus<CanvasEventMap>;
 
-  beforeEach(() => { bus = new CanvasEventBus(); });
+  beforeEach(() => {
+    bus = new CanvasEventBus();
+  });
 
   it('registers a listener and returns an unsubscribe function', () => {
     const listener = vi.fn();
@@ -56,7 +58,9 @@ describe('CanvasEventBus.on (subscribe)', () => {
 describe('CanvasEventBus.emit (notify observers)', () => {
   let bus: CanvasEventBus<CanvasEventMap>;
 
-  beforeEach(() => { bus = new CanvasEventBus(); });
+  beforeEach(() => {
+    bus = new CanvasEventBus();
+  });
 
   it('calls the listener with the emitted payload', () => {
     const listener = vi.fn();
@@ -125,7 +129,9 @@ describe('CanvasEventBus.emit (notify observers)', () => {
 describe('CanvasEventBus.off / returned unsubscribe (deregister)', () => {
   let bus: CanvasEventBus<CanvasEventMap>;
 
-  beforeEach(() => { bus = new CanvasEventBus(); });
+  beforeEach(() => {
+    bus = new CanvasEventBus();
+  });
 
   it('calling the unsubscribe function stops future deliveries', () => {
     const listener = vi.fn();
@@ -177,7 +183,9 @@ describe('CanvasEventBus.off / returned unsubscribe (deregister)', () => {
 describe('CanvasEventBus.clear', () => {
   let bus: CanvasEventBus<CanvasEventMap>;
 
-  beforeEach(() => { bus = new CanvasEventBus(); });
+  beforeEach(() => {
+    bus = new CanvasEventBus();
+  });
 
   it('removes all listeners across all events', () => {
     bus.on('stroke_added', vi.fn());

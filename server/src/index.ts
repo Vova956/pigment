@@ -1,13 +1,13 @@
-import express from "express";
-import cors from "cors";
-import { WebSocketServer, WebSocket } from "ws";
+import express from 'express';
+import cors from 'cors';
+import { WebSocketServer, WebSocket } from 'ws';
 
-import { config } from "./config";
-import authRoutes from "./routes/auth.routes";
-import sessionRoutes from "./routes/session.routes";
-import { initDB } from "./db/database";
-import { createTables } from "./db/schema";
-import { applyMessage, loadSnapshot, flushAll } from "./db/session-state";
+import { config } from './config';
+import authRoutes from './routes/auth.routes';
+import sessionRoutes from './routes/session.routes';
+import { initDB } from './db/database';
+import { createTables } from './db/schema';
+import { applyMessage, loadSnapshot, flushAll } from './db/session-state';
 
 // sessionId → set of clients in that room
 const sessionRooms = new Map<string, Set<WebSocket>>();
@@ -21,7 +21,9 @@ const wss = new WebSocketServer({ port: config.wsPort, host: config.host });
 function broadcastToSession(sender: WebSocket | null, sessionId: string, data: object) {
   const msg = JSON.stringify(data);
   const room = sessionRooms.get(sessionId);
-  if (!room) return;
+  if (!room) {
+    return;
+  }
   room.forEach((client) => {
     if (client !== sender && client.readyState === WebSocket.OPEN) {
       client.send(msg);
@@ -30,15 +32,15 @@ function broadcastToSession(sender: WebSocket | null, sessionId: string, data: o
 }
 
 function setupWebSocketServer() {
-  wss.on("connection", (ws: WebSocket) => {
-    console.log("Client connected");
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('Client connected');
 
-    ws.on("message", async (message: Buffer) => {
+    const handleMessage = async (message: Buffer): Promise<void> => {
       try {
         const data = JSON.parse(message.toString());
 
-        if (data.type === "join_session") {
-          const sessionId: string = String(data.sessionId || "default").toUpperCase();
+        if (data.type === 'join_session') {
+          const sessionId: string = String(data.sessionId || 'default').toUpperCase();
           const user = data.user as { id: string; name: string };
 
           // Leave previous session if reconnecting
@@ -57,22 +59,24 @@ function setupWebSocketServer() {
           // Replay persisted canvas state so the joiner sees prior work,
           // even if they're the first one back after everyone left.
           const snapshot = await loadSnapshot(sessionId);
-          ws.send(JSON.stringify({ type: "session_snapshot", snapshot }));
+          ws.send(JSON.stringify({ type: 'session_snapshot', snapshot }));
 
           // Send the new user the list of everyone already in the session
           const existingUsers: { id: string; name: string }[] = [];
           sessionRooms.get(sessionId)!.forEach((client) => {
             if (client !== ws) {
               const u = clientUsers.get(client);
-              if (u) existingUsers.push(u);
+              if (u) {
+                existingUsers.push(u);
+              }
             }
           });
           if (existingUsers.length > 0) {
-            ws.send(JSON.stringify({ type: "session_users", users: existingUsers }));
+            ws.send(JSON.stringify({ type: 'session_users', users: existingUsers }));
           }
 
           // Tell everyone else in the session that this user joined
-          broadcastToSession(ws, sessionId, { type: "user_joined", user });
+          broadcastToSession(ws, sessionId, { type: 'user_joined', user });
         } else {
           // Route all other messages (stroke, cursor_update, clear_canvas, chat…)
           // only to clients in the same session
@@ -85,18 +89,21 @@ function setupWebSocketServer() {
           }
         }
       } catch (err) {
-        console.error("Failed to parse WS message:", err);
+        console.error('Failed to parse WS message:', err);
       }
+    };
+    ws.on('message', (message: Buffer) => {
+      void handleMessage(message);
     });
 
-    ws.on("close", () => {
-      console.log("Client disconnected");
+    ws.on('close', () => {
+      console.log('Client disconnected');
       const sessionId = clientSessions.get(ws);
       const user = clientUsers.get(ws);
 
       if (sessionId && user) {
         // Tell remaining session members this user left
-        broadcastToSession(ws, sessionId, { type: "user_left", userId: user.id });
+        broadcastToSession(ws, sessionId, { type: 'user_left', userId: user.id });
 
         sessionRooms.get(sessionId)?.delete(ws);
         if (sessionRooms.get(sessionId)?.size === 0) {
@@ -108,8 +115,8 @@ function setupWebSocketServer() {
       clientUsers.delete(ws);
     });
 
-    ws.on("error", (error) => {
-      console.error("WebSocket error:", error);
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
     });
   });
 }
@@ -120,10 +127,10 @@ function setupApiServer() {
   app.use(cors({ origin: config.clientUrl }));
   app.use(express.json());
 
-  app.use("/auth", authRoutes);
-  app.use("/sessions", sessionRoutes);
+  app.use('/auth', authRoutes);
+  app.use('/sessions', sessionRoutes);
 
-  app.get("/health", (_req, res) => {
+  app.get('/health', (_req, res) => {
     res.json({ ok: true });
   });
 
@@ -145,10 +152,10 @@ async function start() {
       await flushAll();
       process.exit(0);
     };
-    process.on("SIGINT", () => void shutdown("SIGINT"));
-    process.on("SIGTERM", () => void shutdown("SIGTERM"));
+    process.on('SIGINT', () => void shutdown('SIGINT'));
+    process.on('SIGTERM', () => void shutdown('SIGTERM'));
   } catch (err) {
-    console.error("Failed to start server:", err);
+    console.error('Failed to start server:', err);
     process.exit(1);
   }
 }

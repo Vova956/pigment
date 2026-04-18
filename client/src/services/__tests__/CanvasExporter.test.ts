@@ -3,7 +3,9 @@ import { CanvasExporter } from '../CanvasExporter';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeSvgElement(overrides: Partial<{ clientWidth: number; clientHeight: number }> = {}): SVGSVGElement {
+function makeSvgElement(
+  overrides: Partial<{ clientWidth: number; clientHeight: number }> = {}
+): SVGSVGElement {
   return { clientWidth: 800, clientHeight: 600, ...overrides } as unknown as SVGSVGElement;
 }
 
@@ -13,7 +15,7 @@ function setupXmlSerializer(returnValue = '<svg></svg>') {
     'XMLSerializer',
     class {
       serializeToString = serializeToString;
-    },
+    }
   );
   return { serializeToString };
 }
@@ -89,8 +91,10 @@ describe('CanvasExporter.exportToPng', () => {
       'Image',
       class {
         onload: (() => void) | null = null;
-        set src(_: string) { this.onload?.(); }
-      },
+        set src(_: string) {
+          this.onload?.();
+        }
+      }
     );
 
     exporter.exportToPng(svg);
@@ -123,8 +127,10 @@ describe('CanvasExporter.exportToPng', () => {
       'Image',
       class {
         onload: (() => void) | null = null;
-        set src(_: string) { this.onload?.(); }
-      },
+        set src(_: string) {
+          this.onload?.();
+        }
+      }
     );
 
     exporter.exportToPng(svg);

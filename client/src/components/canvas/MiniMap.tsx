@@ -14,28 +14,46 @@ interface MiniMapProps {
 const MINI_W = 180;
 const MINI_H = 120;
 
-export default function MiniMap({ layers, images, texts, zoom, pan, svgWidth, svgHeight }: MiniMapProps) {
-  if (!svgWidth || !svgHeight) return null;
+export default function MiniMap({
+  layers,
+  images,
+  texts,
+  zoom,
+  pan,
+  svgWidth,
+  svgHeight,
+}: MiniMapProps) {
+  if (!svgWidth || !svgHeight) {
+    return null;
+  }
 
   // Viewport extent in world coords — always included so the red rect stays on-map
   const vpX = pan.x;
   const vpY = pan.y;
-  const vpW = svgWidth  / zoom;
+  const vpW = svgWidth / zoom;
   const vpH = svgHeight / zoom;
 
   // World coordinate range — seed with the original canvas rect AND the current viewport,
   // then expand to cover all content (strokes, images, texts).
   let minX = Math.min(0, vpX);
   let minY = Math.min(0, vpY);
-  let maxX = Math.max(svgWidth,  vpX + vpW);
+  let maxX = Math.max(svgWidth, vpX + vpW);
   let maxY = Math.max(svgHeight, vpY + vpH);
   for (const layer of Object.values(layers)) {
     for (const stroke of layer.strokes) {
       for (const p of stroke.points) {
-        if (p.x < minX) minX = p.x;
-        if (p.y < minY) minY = p.y;
-        if (p.x > maxX) maxX = p.x;
-        if (p.y > maxY) maxY = p.y;
+        if (p.x < minX) {
+          minX = p.x;
+        }
+        if (p.y < minY) {
+          minY = p.y;
+        }
+        if (p.x > maxX) {
+          maxX = p.x;
+        }
+        if (p.y > maxY) {
+          maxY = p.y;
+        }
       }
     }
   }
@@ -56,14 +74,17 @@ export default function MiniMap({ layers, images, texts, zoom, pan, svgWidth, sv
 
   // Add some padding
   const pad = 20;
-  minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+  minX -= pad;
+  minY -= pad;
+  maxX += pad;
+  maxY += pad;
   const worldW = maxX - minX;
   const worldH = maxY - minY;
 
   // Scale to fit minimap
   const scaleX = MINI_W / worldW;
   const scaleY = MINI_H / worldH;
-  const scale  = Math.min(scaleX, scaleY);
+  const scale = Math.min(scaleX, scaleY);
 
   // Convert to minimap coords
   const toMX = (x: number) => (x - minX) * scale;
@@ -81,38 +102,40 @@ export default function MiniMap({ layers, images, texts, zoom, pan, svgWidth, sv
         <rect width={MINI_W} height={MINI_H} fill="white" rx="4" />
 
         {/* Images */}
-        {images.map(img => (
+        {images.map((img) => (
           <rect
             key={img.id}
-            x={toMX(img.x)} y={toMY(img.y)}
-            width={img.width * scale} height={img.height * scale}
-            fill="#cbd5e1" opacity={0.6}
+            x={toMX(img.x)}
+            y={toMY(img.y)}
+            width={img.width * scale}
+            height={img.height * scale}
+            fill="#cbd5e1"
+            opacity={0.6}
           />
         ))}
 
         {/* Texts — shown as small marker dots */}
-        {texts.map(t => (
-          <circle
-            key={t.id}
-            cx={toMX(t.x)} cy={toMY(t.y)}
-            r={1.5} fill={t.color} opacity={0.7}
-          />
+        {texts.map((t) => (
+          <circle key={t.id} cx={toMX(t.x)} cy={toMY(t.y)} r={1.5} fill={t.color} opacity={0.7} />
         ))}
 
         {/* Strokes */}
-        {Object.values(layers).filter(l => l.visible).map(layer =>
-          layer.strokes.map(stroke => (
-            <path
-              key={stroke.id}
-              d={pointsToSvgPath(stroke.points.map(p => ({ x: toMX(p.x), y: toMY(p.y) })))}
-              stroke={stroke.color}
-              strokeWidth={Math.max(stroke.width * scale, 0.5)}
-              strokeLinecap="round" strokeLinejoin="round"
-              fill="none"
-              opacity={stroke.tool === 'highlighter' ? HIGHLIGHTER_OPACITY : 1}
-            />
-          ))
-        )}
+        {Object.values(layers)
+          .filter((l) => l.visible)
+          .map((layer) =>
+            layer.strokes.map((stroke) => (
+              <path
+                key={stroke.id}
+                d={pointsToSvgPath(stroke.points.map((p) => ({ x: toMX(p.x), y: toMY(p.y) })))}
+                stroke={stroke.color}
+                strokeWidth={Math.max(stroke.width * scale, 0.5)}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                opacity={stroke.tool === 'highlighter' ? HIGHLIGHTER_OPACITY : 1}
+              />
+            ))
+          )}
 
         {/* Viewport rectangle */}
         <rect

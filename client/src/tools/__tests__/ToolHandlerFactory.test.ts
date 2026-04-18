@@ -19,7 +19,9 @@ describe('ToolHandlerFactory.create', () => {
   });
 
   it('creates a HighlighterToolHandler for type "highlighter"', () => {
-    expect(ToolHandlerFactory.create(makeTool('highlighter'))).toBeInstanceOf(HighlighterToolHandler);
+    expect(ToolHandlerFactory.create(makeTool('highlighter'))).toBeInstanceOf(
+      HighlighterToolHandler
+    );
   });
 
   it('creates an EraserToolHandler for type "eraser"', () => {

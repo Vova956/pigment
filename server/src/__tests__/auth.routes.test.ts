@@ -99,18 +99,14 @@ describe('POST /auth/login', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns 400 when email is missing', async () => {
-    const res = await request(buildApp())
-      .post('/auth/login')
-      .send({ password: 'secret' });
+    const res = await request(buildApp()).post('/auth/login').send({ password: 'secret' });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error', 'Missing email or password');
   });
 
   it('returns 400 when password is missing', async () => {
-    const res = await request(buildApp())
-      .post('/auth/login')
-      .send({ email: 'alice@example.com' });
+    const res = await request(buildApp()).post('/auth/login').send({ email: 'alice@example.com' });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error', 'Missing email or password');

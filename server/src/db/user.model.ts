@@ -1,12 +1,8 @@
 // src/db/user.model.ts
-import { getDB } from "./database";
-import bcrypt from "bcrypt";
+import { getDB } from './database';
+import bcrypt from 'bcrypt';
 
-export async function createUser(
-  username: string,
-  email: string,
-  password: string
-) {
+export async function createUser(username: string, email: string, password: string) {
   const db = getDB();
   const passwordHash = await bcrypt.hash(password, 10);
 

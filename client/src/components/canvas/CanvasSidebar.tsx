@@ -50,7 +50,7 @@ export default function CanvasSidebar({
             <span className="user-name">{userName}</span>
             <span className="user-role">{myPermission === 'viewer' ? 'Viewer' : 'You'}</span>
           </li>
-          {activeUsers.map(u => (
+          {activeUsers.map((u) => (
             <li key={u.id} className="user-item">
               <div className="user-avatar" style={{ background: u.color }}>
                 {u.name[0].toUpperCase()}

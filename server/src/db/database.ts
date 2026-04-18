@@ -1,11 +1,12 @@
-import sqlite3 from "sqlite3";
-import { open, Database } from "sqlite";
+import sqlite3 from 'sqlite3';
+import type { Database } from 'sqlite';
+import { open } from 'sqlite';
 
 let db: Database<sqlite3.Database, sqlite3.Statement>;
 
 export async function initDB() {
   db = await open({
-    filename: "./pigment.db",
+    filename: './pigment.db',
     driver: sqlite3.Database,
   });
 
@@ -14,7 +15,7 @@ export async function initDB() {
 
 export function getDB() {
   if (!db) {
-    initDB();
+    void initDB();
   }
   return db;
 }
