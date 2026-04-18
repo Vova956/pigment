@@ -14,4 +14,3 @@ server/dist/
 .env.local
 !.env.development
 !.env.production
-package-lock.json
