@@ -11,7 +11,18 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'src/test/', '**/*.d.ts', '**/*.config.*', '**/dist/**'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/dist/**',
+        'src/**/__tests__/**',
+        'src/**/*.{test,spec}.{ts,tsx}',
+        'src/components/**',
+        'src/pages/**',
+      ],
     },
   },
 });

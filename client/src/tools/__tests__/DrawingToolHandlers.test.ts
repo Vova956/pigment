@@ -4,6 +4,7 @@ import { HighlighterToolHandler } from '../HighlighterToolHandler';
 import { EraserToolHandler } from '../EraserToolHandler';
 import { LassoToolHandler } from '../LassoToolHandler';
 import { TextToolHandler } from '../TextToolHandler';
+import { PanToolHandler } from '../PanToolHandler';
 import type { DrawingTool, LayerData, Point, Stroke } from '../../types/canvas';
 
 // ── Shared test data ──────────────────────────────────────────────────────────
@@ -115,8 +116,8 @@ describe('HighlighterToolHandler', () => {
 describe('EraserToolHandler', () => {
   const handler = new EraserToolHandler(makeTool('eraser', { width: 4 }));
 
-  it('has cursor "cell"', () => {
-    expect(handler.cursor).toBe('cell');
+  it('has cursor "none" (custom cursor rendered elsewhere)', () => {
+    expect(handler.cursor).toBe('none');
   });
 
   it('has stroke preview disabled', () => {
@@ -244,5 +245,43 @@ describe('TextToolHandler', () => {
   it('onEnd returns empty result (text placement is handled by Canvas)', () => {
     const result = handler.onEnd([{ x: 0, y: 0 }], emptyLayers, 'u1', 'Alice');
     expect(result).toEqual({});
+  });
+});
+
+// ── PanToolHandler ────────────────────────────────────────────────────────────
+
+describe('PanToolHandler', () => {
+  const handler = new PanToolHandler(makeTool('pan'));
+
+  it('has cursor "grab"', () => {
+    expect(handler.cursor).toBe('grab');
+  });
+
+  it('has stroke preview disabled', () => {
+    expect(handler.hasStrokePreview).toBe(false);
+  });
+
+  it('onMove (inherited) appends the point', () => {
+    const result = handler.onMove({ x: 2, y: 3 }, [{ x: 0, y: 0 }], emptyLayers, new Set());
+    expect(result.newPoints).toEqual([
+      { x: 0, y: 0 },
+      { x: 2, y: 3 },
+    ]);
+  });
+
+  it('onEnd (inherited) returns an empty result', () => {
+    expect(handler.onEnd([{ x: 0, y: 0 }], emptyLayers, 'u1', 'Alice')).toEqual({});
+  });
+});
+
+// ── PenToolHandler.onEnd edge: empty layers ───────────────────────────────────
+
+describe('PenToolHandler — additional edge cases', () => {
+  const handler = new PenToolHandler(makeTool('pen', { color: '#abcdef', width: 9 }));
+
+  it('onEnd uses the tool color and width on the emitted stroke', () => {
+    const { stroke } = handler.onEnd([{ x: 0, y: 0 }], emptyLayers, 'u', 'n');
+    expect(stroke!.color).toBe('#abcdef');
+    expect(stroke!.width).toBe(9);
   });
 });

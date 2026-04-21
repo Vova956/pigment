@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { GeometryService } from '../GeometryService';
 import type { Point, Stroke } from '../../types/canvas';
 
@@ -139,5 +139,150 @@ describe('GeometryService.strokeInLasso', () => {
       { x: 10, y: 10 }, // inside
     ]);
     expect(GeometryService.strokeInLasso(stroke, boxLasso)).toBe(true);
+  });
+});
+
+// ── splitStrokeAtEraser ───────────────────────────────────────────────────────
+
+describe('GeometryService.splitStrokeAtEraser', () => {
+  it('returns the original stroke when nothing is erased', () => {
+    const stroke = makeStroke([
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ]);
+    const result = GeometryService.splitStrokeAtEraser(stroke, { x: 100, y: 100 }, 5);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBe(stroke);
+  });
+
+  it('returns an empty array when the whole stroke is erased', () => {
+    const stroke = makeStroke([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ]);
+    const result = GeometryService.splitStrokeAtEraser(stroke, { x: 0, y: 0 }, 50);
+    expect(result).toEqual([]);
+  });
+
+  it('splits the stroke into two sub-strokes when the middle is erased', () => {
+    const stroke = makeStroke([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 50, y: 0 }, // erased
+      { x: 51, y: 0 }, // erased
+      { x: 100, y: 0 },
+      { x: 101, y: 0 },
+    ]);
+    const result = GeometryService.splitStrokeAtEraser(stroke, { x: 50, y: 0 }, 5);
+    expect(result).toHaveLength(2);
+    expect(result[0].points).toHaveLength(2);
+    expect(result[1].points).toHaveLength(2);
+  });
+
+  it('assigns fresh IDs to sub-strokes (different from the original)', () => {
+    const stroke = makeStroke(
+      [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 50, y: 0 }, // erased
+        { x: 100, y: 0 },
+        { x: 101, y: 0 },
+      ],
+      { id: 'original-id' }
+    );
+    const result = GeometryService.splitStrokeAtEraser(stroke, { x: 50, y: 0 }, 5);
+    for (const sub of result) {
+      expect(sub.id).not.toBe('original-id');
+    }
+  });
+
+  it('discards run fragments that contain fewer than 2 points', () => {
+    const stroke = makeStroke([
+      { x: 0, y: 0 }, // outside (1 point → discarded)
+      { x: 50, y: 0 }, // erased
+      { x: 100, y: 0 },
+      { x: 101, y: 0 }, // outside (2 points → kept)
+    ]);
+    const result = GeometryService.splitStrokeAtEraser(stroke, { x: 50, y: 0 }, 5);
+    expect(result).toHaveLength(1);
+    expect(result[0].points).toEqual([
+      { x: 100, y: 0 },
+      { x: 101, y: 0 },
+    ]);
+  });
+});
+
+// ── getSvgCoords ──────────────────────────────────────────────────────────────
+
+describe('GeometryService.getSvgCoords', () => {
+  function makeSvg() {
+    const matrix = { inverse: vi.fn().mockReturnValue({ dummy: true }) };
+    const pt = {
+      x: 0,
+      y: 0,
+      matrixTransform: vi.fn().mockReturnValue({ x: 10, y: 20 }),
+    };
+    const svg = {
+      createSVGPoint: vi.fn().mockReturnValue(pt),
+      getScreenCTM: vi.fn().mockReturnValue(matrix),
+    } as unknown as SVGSVGElement;
+    return { svg, pt };
+  }
+
+  it('returns null when getScreenCTM is null', () => {
+    const svg = {
+      createSVGPoint: vi.fn().mockReturnValue({ x: 0, y: 0, matrixTransform: vi.fn() }),
+      getScreenCTM: vi.fn().mockReturnValue(null),
+    } as unknown as SVGSVGElement;
+
+    const event = { clientX: 5, clientY: 10 } as unknown as React.MouseEvent;
+    expect(GeometryService.getSvgCoords(event, svg)).toBeNull();
+  });
+
+  it('returns null for a touch event with no touches', () => {
+    const { svg } = makeSvg();
+    const event = { touches: [] } as unknown as React.TouchEvent;
+    expect(GeometryService.getSvgCoords(event, svg)).toBeNull();
+  });
+
+  it('returns transformed coordinates for a mouse event', () => {
+    const { svg, pt } = makeSvg();
+    const event = { clientX: 100, clientY: 200 } as unknown as React.MouseEvent;
+    const result = GeometryService.getSvgCoords(event, svg);
+    expect(pt.x).toBe(100);
+    expect(pt.y).toBe(200);
+    expect(result).toEqual({ x: 10, y: 20 });
+  });
+
+  it('uses the first touch for touch events', () => {
+    const { svg, pt } = makeSvg();
+    const event = {
+      touches: [{ clientX: 50, clientY: 75 }],
+    } as unknown as React.TouchEvent;
+    const result = GeometryService.getSvgCoords(event, svg);
+    expect(pt.x).toBe(50);
+    expect(pt.y).toBe(75);
+    expect(result).toEqual({ x: 10, y: 20 });
+  });
+});
+
+// ── getClientCoords ───────────────────────────────────────────────────────────
+
+describe('GeometryService.getClientCoords', () => {
+  it('returns client coordinates from a mouse event', () => {
+    const event = { clientX: 123, clientY: 456 } as unknown as React.MouseEvent;
+    expect(GeometryService.getClientCoords(event)).toEqual({ x: 123, y: 456 });
+  });
+
+  it('returns client coordinates from a touch event', () => {
+    const event = {
+      touches: [{ clientX: 12, clientY: 34 }],
+    } as unknown as React.TouchEvent;
+    expect(GeometryService.getClientCoords(event)).toEqual({ x: 12, y: 34 });
+  });
+
+  it('returns { x: 0, y: 0 } for a touch event with no touches', () => {
+    const event = { touches: [] } as unknown as React.TouchEvent;
+    expect(GeometryService.getClientCoords(event)).toEqual({ x: 0, y: 0 });
   });
 });
