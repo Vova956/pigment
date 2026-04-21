@@ -35,10 +35,11 @@ describe('createUser', () => {
 
   it('inserts the user with username, email, and hashed password', async () => {
     await createUser('alice', 'alice@example.com', 'plain-pw');
-    expect(mockDb.run).toHaveBeenCalledWith(
-      expect.stringMatching(/INSERT INTO users/i),
-      ['alice', 'alice@example.com', '$hashed$']
-    );
+    expect(mockDb.run).toHaveBeenCalledWith(expect.stringMatching(/INSERT INTO users/i), [
+      'alice',
+      'alice@example.com',
+      '$hashed$',
+    ]);
   });
 
   it('propagates errors thrown by the database', async () => {

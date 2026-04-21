@@ -91,7 +91,11 @@ describe('loadSnapshot', () => {
 
   it('parses and returns the stored snapshot when a row exists', async () => {
     const id = nextSessionId();
-    const stored = { layers: { a: { userName: 'A', visible: true, strokes: [] } }, images: [], texts: [] };
+    const stored = {
+      layers: { a: { userName: 'A', visible: true, strokes: [] } },
+      images: [],
+      texts: [],
+    };
     mockDb.get.mockResolvedValueOnce({ snapshot: JSON.stringify(stored) });
 
     const snap = await loadSnapshot(id);
