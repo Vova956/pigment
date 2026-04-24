@@ -6,7 +6,16 @@ import { CanvasExporter } from '../CanvasExporter';
 function makeSvgElement(
   overrides: Partial<{ clientWidth: number; clientHeight: number }> = {}
 ): SVGSVGElement {
-  return { clientWidth: 800, clientHeight: 600, ...overrides } as unknown as SVGSVGElement;
+  const clone = {
+    querySelectorAll: vi.fn().mockReturnValue([]),
+    setAttribute: vi.fn(),
+  };
+  return {
+    clientWidth: 800,
+    clientHeight: 600,
+    cloneNode: vi.fn().mockReturnValue(clone),
+    ...overrides,
+  } as unknown as SVGSVGElement;
 }
 
 function setupXmlSerializer(returnValue = '<svg></svg>') {
@@ -61,14 +70,15 @@ describe('CanvasExporter.exportToPng', () => {
     vi.restoreAllMocks();
   });
 
-  it('calls XMLSerializer.serializeToString on the SVG element', () => {
+  it('calls XMLSerializer.serializeToString on a clone of the SVG element', () => {
     const { serializeToString } = setupXmlSerializer();
     setupUrlMocks();
     const svg = makeSvgElement();
 
     exporter.exportToPng(svg);
 
-    expect(serializeToString).toHaveBeenCalledWith(svg);
+    expect(svg.cloneNode).toHaveBeenCalledWith(true);
+    expect(serializeToString).toHaveBeenCalledTimes(1);
   });
 
   it('creates an object URL from the serialized blob', () => {
