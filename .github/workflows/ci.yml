@@ -9,7 +9,7 @@ on:
 jobs:
   test-client:
     name: Test Client
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./client
