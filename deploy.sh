@@ -13,17 +13,22 @@ sudo cp -r client/dist/* /var/www/pigment/
 echo "==> Building server..."
 npm run build:server
 
-echo "==> Installing pm2..."
-npm install -g pm2
+echo "==> Stopping any existing server on port 8080..."
+PID=$(lsof -ti :8080 || true)
+if [ -n "$PID" ]; then
+  kill "$PID"
+  # give the shutdown handler a moment to flush session state
+  sleep 2
+  # force-kill if still alive
+  kill -9 "$PID" 2>/dev/null || true
+fi
 
-echo "==> Starting server with pm2..."
-pm2 stop pigment-server 2>/dev/null || true
-pm2 delete pigment-server 2>/dev/null || true
-pm2 start server/dist/index.js --name pigment-server
+echo "==> Starting server with nohup..."
+cd server
+nohup node dist/index.js > ~/pigment-server.log 2>&1 &
+disown
+cd ..
 
-echo "==> Saving pm2 config..."
-pm2 save
-pm2 startup
-
-echo "==> Done. Server is running."
-pm2 status pigment-server
+echo "==> Done. Server is running. Logs: ~/pigment-server.log"
+sleep 1
+lsof -i :8080 || echo "WARNING: server not listening on 8080"
