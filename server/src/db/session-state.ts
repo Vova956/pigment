@@ -57,6 +57,10 @@ export interface SessionSnapshot {
 
 // ── In-memory cache keyed by sessionId ───────────────────────────────────────
 const cache = new Map<string, SessionSnapshot>();
+// In-flight loads, so concurrent callers share a single DB read and snapshot
+// reference. Without this, each caller creates its own empty() snap and races
+// to cache.set — strokes mutated on the loser are silently dropped.
+const inflight = new Map<string, Promise<SessionSnapshot>>();
 const pendingWrites = new Map<string, NodeJS.Timeout>();
 const WRITE_DEBOUNCE_MS = 500;
 
@@ -69,15 +73,27 @@ export async function loadSnapshot(sessionId: string): Promise<SessionSnapshot> 
   if (cached) {
     return cached;
   }
+  const pending = inflight.get(sessionId);
+  if (pending) {
+    return pending;
+  }
 
-  const db = getDB();
-  const row = await db.get<{ snapshot: string }>(
-    'SELECT snapshot FROM session_state WHERE session_id = ?',
-    sessionId
-  );
-  const snap = row ? (JSON.parse(row.snapshot) as SessionSnapshot) : empty();
-  cache.set(sessionId, snap);
-  return snap;
+  const promise = (async () => {
+    const db = getDB();
+    const row = await db.get<{ snapshot: string }>(
+      'SELECT snapshot FROM session_state WHERE session_id = ?',
+      sessionId
+    );
+    const snap = row ? (JSON.parse(row.snapshot) as SessionSnapshot) : empty();
+    cache.set(sessionId, snap);
+    return snap;
+  })();
+  inflight.set(sessionId, promise);
+  try {
+    return await promise;
+  } finally {
+    inflight.delete(sessionId);
+  }
 }
 
 /** Schedule a persist. Repeated calls within the debounce window collapse into one write. */
