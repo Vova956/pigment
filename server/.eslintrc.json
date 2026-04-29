@@ -29,5 +29,5 @@
     "node": true,
     "es2022": true
   },
-  "ignorePatterns": ["src/**/__tests__/**/*", "vitest.config.ts"]
+  "ignorePatterns": ["src/**/__tests__/**/*", "src/**/*.test.ts", "src/**/*.spec.ts", "src/test/**/*", "vitest.config.ts"]
 }
